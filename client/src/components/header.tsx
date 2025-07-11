@@ -6,7 +6,7 @@ interface HeaderProps {
     id: number;
     name: string;
     avatar: string;
-  };
+  } | null;
   onChangeUser?: () => void;
 }
 
@@ -32,20 +32,29 @@ export default function Header({ currentUser, onChangeUser }: HeaderProps) {
           </div>
           
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="sm" className="p-2">
-              <Bell className="h-4 w-4 text-gray-500" />
-            </Button>
-            <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium text-gray-700">Hi, {currentUser.name}!</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleUserClick}
-                className="player-avatar hover:ring-2 hover:ring-court-blue cursor-pointer"
-              >
-                {currentUser.avatar}
-              </Button>
-            </div>
+            {currentUser ? (
+              <>
+                <Button variant="ghost" size="sm" className="p-2">
+                  <Bell className="h-4 w-4 text-gray-500" />
+                </Button>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm font-medium text-gray-700">Hi, {currentUser.name}!</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleUserClick}
+                    className="player-avatar hover:ring-2 hover:ring-court-blue cursor-pointer"
+                  >
+                    {currentUser.avatar}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium text-gray-700">Welcome to CourtCall!</span>
+                <span className="text-xs text-gray-500">Enter your name to join matches</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

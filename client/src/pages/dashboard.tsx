@@ -6,13 +6,13 @@ import WeeklyCalendar from "@/components/weekly-calendar";
 import Leaderboard from "@/components/leaderboard";
 import StatsCards from "@/components/stats-cards";
 import UpcomingReminders from "@/components/upcoming-reminders";
-import NameInputDialog from "@/components/name-input-dialog";
+
 import { formatWeekRange } from "@/lib/date-utils";
 
 export default function Dashboard() {
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [currentUser, setCurrentUser] = useState<{ id: number; name: string; avatar: string } | null>(null);
-  const [showNameDialog, setShowNameDialog] = useState(false);
+
 
   // Check for stored user on mount
   useEffect(() => {
@@ -23,10 +23,7 @@ export default function Dashboard() {
         setCurrentUser(user);
       } catch (error) {
         console.error('Failed to parse stored user:', error);
-        setShowNameDialog(true);
       }
-    } else {
-      setShowNameDialog(true);
     }
   }, []);
 
@@ -81,18 +78,9 @@ export default function Dashboard() {
     
     localStorage.setItem('courtcall-user', JSON.stringify(user));
     setCurrentUser(user);
-    setShowNameDialog(false);
   };
 
-  // Don't render anything until we have a user
-  if (!currentUser) {
-    return (
-      <NameInputDialog 
-        open={showNameDialog} 
-        onNameSubmit={handleNameSubmit} 
-      />
-    );
-  }
+  // Always show main interface, handle name input through components
 
   const navigateWeek = (direction: "prev" | "next") => {
     setCurrentWeek(prev => 
@@ -112,7 +100,6 @@ export default function Dashboard() {
   const handleChangeUser = () => {
     localStorage.removeItem('courtcall-user');
     setCurrentUser(null);
-    setShowNameDialog(true);
   };
 
   return (
@@ -129,6 +116,7 @@ export default function Dashboard() {
               isLoading={matchesLoading}
               onNavigateWeek={navigateWeek}
               onMatchUpdate={handleMatchUpdate}
+              onNameSubmit={handleNameSubmit}
             />
           </div>
           
@@ -151,10 +139,7 @@ export default function Dashboard() {
         </div>
       </main>
       
-      <NameInputDialog 
-        open={showNameDialog} 
-        onNameSubmit={handleNameSubmit} 
-      />
+
     </div>
   );
 }

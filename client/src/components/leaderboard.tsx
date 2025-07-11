@@ -17,7 +17,7 @@ interface LeaderboardProps {
     id: number;
     name: string;
     avatar: string;
-  };
+  } | null;
   isLoading: boolean;
 }
 
@@ -63,7 +63,7 @@ export default function Leaderboard({ leaderboard, currentUser, isLoading }: Lea
   };
 
   const topPlayers = leaderboard.slice(0, 3);
-  const currentUserRank = leaderboard.findIndex(player => player.userId === currentUser.id);
+  const currentUserRank = currentUser ? leaderboard.findIndex(player => player.userId === currentUser.id) : -1;
   const currentUserData = currentUserRank !== -1 ? leaderboard[currentUserRank] : null;
 
   return (
@@ -78,7 +78,7 @@ export default function Leaderboard({ leaderboard, currentUser, isLoading }: Lea
         <div className="space-y-3">
           {topPlayers.map((player, index) => {
             const rank = index + 1;
-            const isCurrentUser = player.userId === currentUser.id;
+            const isCurrentUser = currentUser ? player.userId === currentUser.id : false;
             
             return (
               <div

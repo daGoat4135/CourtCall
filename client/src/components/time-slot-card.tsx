@@ -1,9 +1,11 @@
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Plus, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { useState } from "react";
 
 interface TimeSlotCardProps {
   match?: {
@@ -27,7 +29,8 @@ interface TimeSlotCardProps {
     id: number;
     name: string;
     avatar: string;
-  };
+  } | null;
+  onNameSubmit?: (name: string) => void;
   onMatchUpdate: () => void;
   slotInfo: {
     icon: any;
@@ -44,19 +47,36 @@ export default function TimeSlotCard({
   currentUser,
   onMatchUpdate,
   slotInfo,
+  onNameSubmit,
 }: TimeSlotCardProps) {
   const { toast } = useToast();
   const { icon: Icon, label, time, color } = slotInfo;
+  const [nameInput, setNameInput] = useState("");
+  const [showNameInput, setShowNameInput] = useState(false);
 
   const rsvps = match?.rsvps || [];
-  const currentPlayerRsvp = rsvps.find(rsvp => rsvp.user.name === currentUser.name);
+  const currentPlayerRsvp = rsvps.find(rsvp => currentUser && rsvp.user.name === currentUser.name);
   const isUserJoined = !!currentPlayerRsvp;
   const playerCount = rsvps.length;
   const maxPlayers = match?.maxPlayers || 4;
   const isFull = playerCount >= maxPlayers;
 
+  const handleNameSubmit = (name: string) => {
+    if (name.trim().length >= 2) {
+      if (onNameSubmit) {
+        onNameSubmit(name.trim());
+      }
+      setShowNameInput(false);
+      setNameInput("");
+    }
+  };
+
   const createAndJoinMutation = useMutation({
     mutationFn: async () => {
+      if (!currentUser) {
+        throw new Error("No user available");
+      }
+      
       // First create the match if it doesn't exist
       if (!match) {
         const createResponse = await fetch("/api/matches", {
@@ -199,7 +219,38 @@ export default function TimeSlotCard({
         </div>
       )}
       
-      {isUserJoined ? (
+      {!currentUser ? (
+        showNameInput ? (
+          <div className="flex space-x-2">
+            <Input
+              placeholder="Enter your name"
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              className="text-xs h-8"
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleNameSubmit(nameInput);
+                }
+              }}
+              autoFocus
+            />
+            <Button
+              className="bg-court-blue hover:bg-blue-700 text-white text-xs h-8 px-3"
+              onClick={() => handleNameSubmit(nameInput)}
+              disabled={nameInput.trim().length < 2}
+            >
+              Join
+            </Button>
+          </div>
+        ) : (
+          <Button
+            className="w-full bg-court-blue hover:bg-blue-700 text-white text-xs h-8"
+            onClick={() => setShowNameInput(true)}
+          >
+            {playerCount === 0 ? "Start Match" : "Join"}
+          </Button>
+        )
+      ) : isUserJoined ? (
         <Button
           variant="outline"
           className="w-full text-xs h-8"
