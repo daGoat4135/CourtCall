@@ -54,9 +54,11 @@ export default function TimeSlotCard({
   const [showNameInput, setShowNameInput] = useState(false);
 
   const rsvps = match?.rsvps || [];
+  const confirmedRsvps = rsvps.filter(rsvp => rsvp.status === "confirmed");
+  const waitlistedRsvps = rsvps.filter(rsvp => rsvp.status === "waitlisted");
   const currentPlayerRsvp = rsvps.find(rsvp => currentUser && rsvp.user.name === currentUser.name);
   const isUserJoined = !!currentPlayerRsvp;
-  const playerCount = rsvps.length;
+  const playerCount = confirmedRsvps.length;
   const maxPlayers = match?.maxPlayers || 4;
   const isFull = playerCount >= maxPlayers;
 
@@ -203,15 +205,34 @@ export default function TimeSlotCard({
       </div>
       
       {playerCount > 0 && (
-        <div className="flex -space-x-1 mb-3">
-          {rsvps.slice(0, 3).map((rsvp) => (
-            <div key={rsvp.userId} className="player-avatar w-6 h-6 text-xs">
-              {rsvp.user.avatar}
-            </div>
-          ))}
-          {playerCount > 3 && (
-            <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-medium">
-              +{playerCount - 3}
+        <div className="mb-3 space-y-2">
+          {/* Confirmed players */}
+          <div className="flex -space-x-1">
+            {confirmedRsvps.slice(0, 3).map((rsvp) => (
+              <div key={rsvp.userId} className="player-avatar w-6 h-6 text-xs">
+                {rsvp.user.avatar}
+              </div>
+            ))}
+            {playerCount > 3 && (
+              <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-medium">
+                +{playerCount - 3}
+              </div>
+            )}
+          </div>
+          
+          {/* Waitlisted players */}
+          {waitlistedRsvps.length > 0 && (
+            <div className="flex -space-x-1">
+              {waitlistedRsvps.slice(0, 3).map((rsvp) => (
+                <div key={rsvp.userId} className="waitlist-avatar w-6 h-6 text-xs">
+                  {rsvp.user.avatar}
+                </div>
+              ))}
+              {waitlistedRsvps.length > 3 && (
+                <div className="w-6 h-6 bg-gray-100 border-2 border-dashed border-gray-300 rounded-full flex items-center justify-center text-xs font-medium text-gray-500">
+                  +{waitlistedRsvps.length - 3}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -245,7 +266,7 @@ export default function TimeSlotCard({
             className="w-full bg-court-blue hover:bg-blue-700 text-white text-xs h-8"
             onClick={() => setShowNameInput(true)}
           >
-            {playerCount === 0 ? "Start Match" : "Join"}
+            {playerCount === 0 ? "Start Match" : isFull ? "Join Waitlist" : "Join"}
           </Button>
         )
       ) : isUserJoined ? (
@@ -257,21 +278,13 @@ export default function TimeSlotCard({
         >
           {leaveMutation.isPending ? "Leaving..." : "Leave"}
         </Button>
-      ) : isFull ? (
-        <Button
-          variant="outline"
-          className="w-full text-xs h-8 cursor-not-allowed"
-          disabled
-        >
-          Full
-        </Button>
       ) : (
         <Button
           className="w-full bg-court-blue hover:bg-blue-700 text-white text-xs h-8"
           onClick={() => createAndJoinMutation.mutate()}
           disabled={createAndJoinMutation.isPending}
         >
-          {createAndJoinMutation.isPending ? "Joining..." : playerCount === 0 ? "Start Match" : "Join"}
+          {createAndJoinMutation.isPending ? "Joining..." : playerCount === 0 ? "Start Match" : isFull ? "Join Waitlist" : "Join"}
         </Button>
       )}
     </div>

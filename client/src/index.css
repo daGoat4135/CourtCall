@@ -93,6 +93,10 @@
     @apply w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-xs;
   }
   
+  .waitlist-avatar {
+    @apply w-8 h-8 rounded-full bg-gray-200 border-2 border-dashed border-gray-400 flex items-center justify-center text-gray-600 font-semibold text-xs;
+  }
+  
   .match-card {
     @apply transition-all duration-200 ease-in-out hover:transform hover:-translate-y-1 hover:shadow-lg;
   }

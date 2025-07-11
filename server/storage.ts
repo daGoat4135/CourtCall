@@ -34,6 +34,9 @@ export interface IStorage {
   createRsvp(rsvp: InsertRsvp): Promise<Rsvp>;
   deleteRsvp(matchId: number, userId: number): Promise<boolean>;
   getRsvpCount(matchId: number): Promise<number>;
+  getConfirmedRsvpCount(matchId: number): Promise<number>;
+  getWaitlistedRsvps(matchId: number): Promise<Rsvp[]>;
+  promoteFromWaitlist(matchId: number): Promise<Rsvp | null>;
 
   // Notification operations
   createNotification(notification: InsertNotification): Promise<Notification>;
@@ -257,7 +260,27 @@ export class MemStorage implements IStorage {
   }
 
   async getRsvpCount(matchId: number): Promise<number> {
+    return Array.from(this.rsvps.values()).filter(rsvp => rsvp.matchId === matchId && rsvp.status !== "cancelled").length;
+  }
+
+  async getConfirmedRsvpCount(matchId: number): Promise<number> {
     return Array.from(this.rsvps.values()).filter(rsvp => rsvp.matchId === matchId && rsvp.status === "confirmed").length;
+  }
+
+  async getWaitlistedRsvps(matchId: number): Promise<Rsvp[]> {
+    return Array.from(this.rsvps.values()).filter(rsvp => rsvp.matchId === matchId && rsvp.status === "waitlisted");
+  }
+
+  async promoteFromWaitlist(matchId: number): Promise<Rsvp | null> {
+    const waitlisted = await this.getWaitlistedRsvps(matchId);
+    if (waitlisted.length === 0) return null;
+    
+    // Get the first waitlisted person (first come, first served)
+    const toPromote = waitlisted.sort((a, b) => a.joinedAt.getTime() - b.joinedAt.getTime())[0];
+    toPromote.status = "confirmed";
+    this.rsvps.set(toPromote.id, toPromote);
+    
+    return toPromote;
   }
 
   // Notification operations

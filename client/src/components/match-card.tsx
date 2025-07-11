@@ -118,10 +118,13 @@ export default function MatchCard({ match, currentUser, onMatchUpdate }: MatchCa
   };
 
   const renderPlayerAvatars = () => {
+    const confirmedRsvps = rsvps.filter(rsvp => rsvp.status === "confirmed");
+    const waitlistedRsvps = rsvps.filter(rsvp => rsvp.status === "waitlisted");
+    
     const avatars = [];
     
-    // Add existing players
-    rsvps.forEach((rsvp) => {
+    // Add confirmed players
+    confirmedRsvps.forEach((rsvp) => {
       avatars.push(
         <div key={rsvp.userId} className="player-avatar">
           {rsvp.user.avatar}
@@ -129,8 +132,8 @@ export default function MatchCard({ match, currentUser, onMatchUpdate }: MatchCa
       );
     });
     
-    // Add empty slots
-    const emptySlots = match.maxPlayers - rsvps.length;
+    // Add empty slots for confirmed players
+    const emptySlots = match.maxPlayers - confirmedRsvps.length;
     for (let i = 0; i < emptySlots; i++) {
       avatars.push(
         <div
@@ -141,6 +144,15 @@ export default function MatchCard({ match, currentUser, onMatchUpdate }: MatchCa
         </div>
       );
     }
+    
+    // Add waitlisted players
+    waitlistedRsvps.forEach((rsvp) => {
+      avatars.push(
+        <div key={`waitlist-${rsvp.userId}`} className="waitlist-avatar">
+          {rsvp.user.avatar}
+        </div>
+      );
+    });
     
     return avatars;
   };
@@ -160,13 +172,18 @@ export default function MatchCard({ match, currentUser, onMatchUpdate }: MatchCa
         <div className="flex -space-x-2">
           {renderPlayerAvatars()}
         </div>
-        <span className={`text-xs font-medium ${
+        <div className={`text-xs font-medium ${
           isFull ? 'text-green-600' : 
           isNearlyFull ? 'text-amber-600' : 
           'text-gray-500'
         }`}>
-          {rsvps.length}/{match.maxPlayers}
-        </span>
+          {rsvps.filter(rsvp => rsvp.status === "confirmed").length}/{match.maxPlayers}
+          {rsvps.filter(rsvp => rsvp.status === "waitlisted").length > 0 && (
+            <span className="text-gray-400 ml-1">
+              (+{rsvps.filter(rsvp => rsvp.status === "waitlisted").length} waitlisted)
+            </span>
+          )}
+        </div>
       </div>
       
       {isUserJoined ? (
@@ -178,21 +195,13 @@ export default function MatchCard({ match, currentUser, onMatchUpdate }: MatchCa
         >
           {leaveMutation.isPending ? "Leaving..." : "Leave Match"}
         </Button>
-      ) : isFull ? (
-        <Button
-          variant="outline"
-          className="w-full text-gray-500 cursor-not-allowed"
-          disabled
-        >
-          Full
-        </Button>
       ) : (
         <Button
           className="w-full bg-court-blue hover:bg-blue-700 text-white text-sm"
           onClick={() => joinMutation.mutate()}
           disabled={joinMutation.isPending}
         >
-          {joinMutation.isPending ? "Joining..." : "Join Match"}
+          {joinMutation.isPending ? "Joining..." : isFull ? "Join Waitlist" : "Join Match"}
         </Button>
       )}
     </div>

@@ -78,22 +78,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "User already joined this match" });
       }
       
-      // Check if match is full
-      const rsvpCount = await storage.getRsvpCount(matchId);
-      if (rsvpCount >= match.maxPlayers) {
-        return res.status(400).json({ error: "Match is full" });
-      }
+      // Check if match has spots available
+      const confirmedCount = await storage.getConfirmedRsvpCount(matchId);
+      const status = confirmedCount >= match.maxPlayers ? "waitlisted" : "confirmed";
       
       const rsvp = await storage.createRsvp({
         matchId,
         userId: actualUserId,
-        status: "confirmed"
+        status
       });
       
       // Update match status if full
-      const newRsvpCount = await storage.getRsvpCount(matchId);
-      if (newRsvpCount >= match.maxPlayers) {
-        await storage.updateMatch(matchId, { status: "full" });
+      if (status === "confirmed") {
+        const newConfirmedCount = await storage.getConfirmedRsvpCount(matchId);
+        if (newConfirmedCount >= match.maxPlayers) {
+          await storage.updateMatch(matchId, { status: "full" });
+        }
       }
       
       res.json(rsvp);
@@ -116,16 +116,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         actualUserId = user.id;
       }
       
+      // Check if the leaving user was confirmed before deleting
+      const existingRsvps = await storage.getRsvpsByMatch(matchId);
+      const leavingRsvp = existingRsvps.find(rsvp => rsvp.userId === actualUserId);
+      const wasConfirmed = leavingRsvp?.status === "confirmed";
+      
       const success = await storage.deleteRsvp(matchId, actualUserId);
       if (!success) {
         return res.status(404).json({ error: "RSVP not found" });
       }
       
+      // If a confirmed player left, promote someone from waitlist
+      if (wasConfirmed) {
+        await storage.promoteFromWaitlist(matchId);
+      }
+      
       // Update match status back to open if no longer full
       const match = await storage.getMatch(matchId);
       if (match && match.status === "full") {
-        const rsvpCount = await storage.getRsvpCount(matchId);
-        if (rsvpCount < match.maxPlayers) {
+        const confirmedCount = await storage.getConfirmedRsvpCount(matchId);
+        if (confirmedCount < match.maxPlayers) {
           await storage.updateMatch(matchId, { status: "open" });
         }
       }

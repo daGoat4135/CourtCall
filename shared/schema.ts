@@ -24,7 +24,7 @@ export const rsvps = pgTable("rsvps", {
   id: serial("id").primaryKey(),
   matchId: integer("match_id").references(() => matches.id).notNull(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  status: text("status").notNull().default("confirmed"), // "confirmed", "cancelled"
+  status: text("status").notNull().default("confirmed"), // "confirmed", "waitlisted", "cancelled"
   joinedAt: timestamp("joined_at").defaultNow(),
 });
 
