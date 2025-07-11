@@ -47,9 +47,11 @@ export const insertUserSchema = createInsertSchema(users).pick({
   avatar: true,
 });
 
-export const insertMatchSchema = createInsertSchema(matches).omit({
-  id: true,
-  createdAt: true,
+export const insertMatchSchema = z.object({
+  date: z.string().transform((str) => new Date(str)),
+  timeSlot: z.string(),
+  maxPlayers: z.number().default(4),
+  status: z.string().default("open"),
 });
 
 export const insertRsvpSchema = createInsertSchema(rsvps).omit({
