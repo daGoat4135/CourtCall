@@ -1,0 +1,76 @@
+1. Product Overview
+
+Problem:
+There’s high interest in playing volleyball at our company’s sand court, but actual matches are irregular due to friction in organizing games. Current systems (Slack polls, spreadsheets) lack structure, visibility, and commitment—leading to missed opportunities for healthy play and team bonding.
+
+Solution:
+Create a lightweight internal web app or Slack-integrated tool (“CourtCall”) that makes scheduling and joining volleyball matches dead simple—with automated reminders, visibility into who’s playing, and a game count leaderboard to encourage participation.
+
+⸻
+
+2. Goals & Success Metrics
+
+Primary Goal:
+✅ Increase the number of games played each week by 2x within 6 weeks.
+
+Secondary Goals:
+	•	✅ Consistent player turnout (minimum 4+ players per weekday session)
+	•	✅ Encourage new players to join (track unique players/week)
+	•	✅ Create a sense of community and ritual around volleyball
+
+Success Metrics:
+	•	Weekly game count
+	•	Daily RSVP counts
+	•	% of matches with at least 4 players
+	•	of unique players/week
+	•	Weekly leaderboard participation
+
+⸻
+
+3. Core Features (MVP)
+
+🗓️ Match Scheduling
+	•	Weekly calendar view (default: M–F, 12–1 PM)
+	•	Anyone can “create” or “join” a match with 1 tap
+	•	Set recurring anchor sessions (e.g. Tuesday 2v2, Friday 4v4)
+
+🔔 Reminders & Confirmations
+	•	Auto-reminders sent 2 hours and 30 mins before a match (via Slack or email)
+	•	“Final call” notification when a game is nearly full (e.g. 3/4)
+
+🏆 Participation Leaderboard
+	•	Track number of games played per player
+	•	Optional: Team stats or win streaks
+	•	End-of-month recognitions or mini-rewards
+
+🎯 Slack Integration (if desired)
+	•	/courtcall command to open match list
+	•	Auto-post daily lineup to the #volleyball Slack channel
+	•	Slackbot reminders and RSVP confirmations
+
+⸻
+
+4. Nice-to-Haves (Post-MVP)
+	•	iCal / Google Calendar sync
+	•	“Bring a Friend” guest toggle
+	•	Match-level comments or emoji hype
+	•	Weather forecast banner
+	•	Automatic photo collages from recent games
+	•	Play type selection: 2v2, 3v3, King of the Court
+
+⸻
+
+5. User Personas
+	•	Core Crew: Regulars who show up 3–5 times/week. Just need frictionless scheduling.
+	•	Floating Players: Interested but need more lead time to plan around meetings/workouts.
+	•	Newcomers: Want to play, but unsure how/when. Need visibility and onboarding.
+
+⸻
+
+6. Tech Stack Recommendation (Optional)
+
+For MVP:
+	•	Frontend: Simple web app (Next.js or Replit-hosted HTML/CSS/JS)
+	•	Backend: Firebase or Supabase (auth, data, leaderboard)
+	•	Slack App: Bolt.js or Slack API webhook + bot integration
+	•	Storage: Google Sheet or Airtable (for MVP tracking)
