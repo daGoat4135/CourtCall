@@ -37,7 +37,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create new match
+  // Create new match (simplified for fixed time slots)
   app.post("/api/matches", async (req, res) => {
     try {
       const matchData = insertMatchSchema.parse(req.body);

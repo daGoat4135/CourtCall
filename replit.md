@@ -7,6 +7,7 @@ CourtCall is a lightweight internal web application designed to solve the fricti
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Interface preference: Ultra-low effort interaction - users want fixed time slots (morning, lunch, after work) they can join with one click instead of creating custom matches.
 
 ## System Architecture
 

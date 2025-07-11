@@ -14,12 +14,8 @@ export const users = pgTable("users", {
 export const matches = pgTable("matches", {
   id: serial("id").primaryKey(),
   date: timestamp("date").notNull(),
-  time: text("time").notNull(),
-  matchType: text("match_type").notNull(), // "2v2", "4v4", "Open"
+  timeSlot: text("time_slot").notNull(), // "morning", "lunch", "afterwork"
   maxPlayers: integer("max_players").notNull().default(4),
-  isRecurring: boolean("is_recurring").default(false),
-  recurringDay: text("recurring_day"), // "monday", "tuesday", etc.
-  createdBy: integer("created_by").references(() => users.id),
   status: text("status").notNull().default("open"), // "open", "full", "confirmed", "cancelled"
   createdAt: timestamp("created_at").defaultNow(),
 });

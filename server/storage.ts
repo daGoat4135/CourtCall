@@ -89,6 +89,68 @@ export class MemStorage implements IStorage {
     sampleUsers.forEach(user => {
       this.createUser(user);
     });
+
+    // Create fixed time slots for today and the next few days
+    this.createFixedTimeSlots();
+  }
+
+  private createFixedTimeSlots() {
+    const today = new Date();
+    const timeSlots = ["morning", "lunch", "afterwork"];
+    
+    // Create slots for the next 5 weekdays
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      
+      // Skip weekends
+      if (date.getDay() === 0 || date.getDay() === 6) continue;
+      
+      timeSlots.forEach(slot => {
+        this.createMatch({
+          date: date,
+          timeSlot: slot,
+          maxPlayers: 4,
+          status: "open"
+        });
+      });
+    }
+    
+    // Add some sample RSVPs to show the interface in action
+    this.addSampleRSVPs();
+  }
+
+  private addSampleRSVPs() {
+    // Get some matches to add RSVPs to
+    const matches = Array.from(this.matches.values());
+    
+    // Add RSVPs to a few matches to show different states
+    if (matches.length > 0) {
+      // Join first lunch match with 2 players
+      const lunchMatch = matches.find(m => m.timeSlot === "lunch");
+      if (lunchMatch) {
+        this.createRsvp({ matchId: lunchMatch.id, userId: 1, status: "confirmed" });
+        this.createRsvp({ matchId: lunchMatch.id, userId: 2, status: "confirmed" });
+      }
+      
+      // Join first morning match with 3 players (almost full)
+      const morningMatch = matches.find(m => m.timeSlot === "morning");
+      if (morningMatch) {
+        this.createRsvp({ matchId: morningMatch.id, userId: 3, status: "confirmed" });
+        this.createRsvp({ matchId: morningMatch.id, userId: 4, status: "confirmed" });
+        this.createRsvp({ matchId: morningMatch.id, userId: 5, status: "confirmed" });
+      }
+      
+      // Fill one afterwork match completely
+      const afterworkMatch = matches.find(m => m.timeSlot === "afterwork");
+      if (afterworkMatch) {
+        this.createRsvp({ matchId: afterworkMatch.id, userId: 6, status: "confirmed" });
+        this.createRsvp({ matchId: afterworkMatch.id, userId: 7, status: "confirmed" });
+        this.createRsvp({ matchId: afterworkMatch.id, userId: 8, status: "confirmed" });
+        this.createRsvp({ matchId: afterworkMatch.id, userId: 9, status: "confirmed" });
+        this.updateMatch(afterworkMatch.id, { status: "full" });
+      }
+    }
   }
 
   // User operations

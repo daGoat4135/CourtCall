@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sunrise, Clock, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import MatchCard from "./match-card";
-import CreateMatchDialog from "./create-match-dialog";
+import TimeSlotCard from "./time-slot-card";
 import { getWeekDates, formatWeekRange, getDayName, getDayNumber } from "@/lib/date-utils";
 import { isSameDay } from "date-fns";
 
@@ -24,24 +23,28 @@ export default function WeeklyCalendar({
   onNavigateWeek, 
   onMatchUpdate 
 }: WeeklyCalendarProps) {
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-
   const weekDates = getWeekDates(currentWeek);
 
   const getMatchesForDate = (date: Date) => {
     return matches.filter(match => isSameDay(new Date(match.date), date));
   };
 
-  const handleCreateMatch = (date: Date) => {
-    setSelectedDate(date);
-    setIsCreateDialogOpen(true);
+  const getTimeSlotInfo = (slot: string) => {
+    switch (slot) {
+      case "morning":
+        return { icon: Sunrise, label: "Morning", time: "8:00 AM", color: "bg-yellow-100 border-yellow-300" };
+      case "lunch":
+        return { icon: Clock, label: "Lunch", time: "12:00 PM", color: "bg-blue-100 border-blue-300" };
+      case "afterwork":
+        return { icon: Moon, label: "After Work", time: "5:30 PM", color: "bg-purple-100 border-purple-300" };
+      default:
+        return { icon: Clock, label: "Match", time: "TBD", color: "bg-gray-100 border-gray-300" };
+    }
   };
 
-  const handleMatchCreated = () => {
-    setIsCreateDialogOpen(false);
-    setSelectedDate(null);
-    onMatchUpdate();
+  const findMatchForSlot = (date: Date, timeSlot: string) => {
+    const dayMatches = getMatchesForDate(date);
+    return dayMatches.find(match => match.timeSlot === timeSlot);
   };
 
   if (isLoading) {
@@ -92,72 +95,42 @@ export default function WeeklyCalendar({
         </div>
 
         <div className="grid grid-cols-5 gap-4 mb-6">
-          {weekDates.map((date) => {
-            const dayMatches = getMatchesForDate(date);
-            const hasMatches = dayMatches.length > 0;
-
-            return (
-              <div key={date.toISOString()} className="text-center">
-                <div className="text-sm font-medium text-gray-500 mb-2">
-                  {getDayName(date)}
-                </div>
-                <div className="text-lg font-semibold text-gray-900 mb-3">
-                  {getDayNumber(date)}
-                </div>
-                
-                {hasMatches ? (
-                  <div className="space-y-2">
-                    {dayMatches.map((match) => (
-                      <MatchCard
-                        key={match.id}
-                        match={match}
-                        currentUser={currentUser}
-                        onMatchUpdate={onMatchUpdate}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div
-                    className="match-card bg-gray-50 rounded-lg p-4 border-2 border-dashed border-gray-300 hover:border-court-blue cursor-pointer"
-                    onClick={() => handleCreateMatch(date)}
-                  >
-                    <div className="text-center">
-                      <Plus className="h-5 w-5 text-gray-400 mx-auto mb-2" />
-                      <p className="text-sm text-gray-500">Create Match</p>
-                      <p className="text-xs text-gray-400">12:00 PM</p>
-                    </div>
-                  </div>
-                )}
+          {weekDates.map((date) => (
+            <div key={date.toISOString()} className="text-center">
+              <div className="text-sm font-medium text-gray-500 mb-2">
+                {getDayName(date)}
               </div>
-            );
-          })}
+              <div className="text-lg font-semibold text-gray-900 mb-3">
+                {getDayNumber(date)}
+              </div>
+              
+              <div className="space-y-2">
+                {["morning", "lunch", "afterwork"].map((timeSlot) => {
+                  const match = findMatchForSlot(date, timeSlot);
+                  const slotInfo = getTimeSlotInfo(timeSlot);
+                  const Icon = slotInfo.icon;
+                  
+                  return (
+                    <TimeSlotCard
+                      key={`${date.toISOString()}-${timeSlot}`}
+                      match={match}
+                      timeSlot={timeSlot}
+                      date={date}
+                      currentUser={currentUser}
+                      onMatchUpdate={onMatchUpdate}
+                      slotInfo={slotInfo}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Button
-            className="flex-1 bg-court-blue hover:bg-blue-700 text-white"
-            onClick={() => setIsCreateDialogOpen(true)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Create New Match
-          </Button>
-          <Button
-            variant="outline"
-            className="flex-1"
-          >
-            <Calendar className="h-4 w-4 mr-2" />
-            View Full Calendar
-          </Button>
+        <div className="text-center text-sm text-gray-500 mt-4">
+          <p>Click any time slot to join a match. Fixed slots make it simple!</p>
         </div>
       </Card>
-
-      <CreateMatchDialog
-        open={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
-        selectedDate={selectedDate}
-        currentUser={currentUser}
-        onMatchCreated={handleMatchCreated}
-      />
     </>
   );
 }

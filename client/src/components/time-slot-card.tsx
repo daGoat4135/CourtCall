@@ -1,0 +1,230 @@
+import { useMutation } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Users } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+
+interface TimeSlotCardProps {
+  match?: {
+    id: number;
+    date: string;
+    timeSlot: string;
+    maxPlayers: number;
+    status: string;
+    rsvps?: Array<{
+      userId: number;
+      user: {
+        id: number;
+        name: string;
+        avatar: string;
+      };
+    }>;
+  };
+  timeSlot: string;
+  date: Date;
+  currentUser: {
+    id: number;
+    name: string;
+    avatar: string;
+  };
+  onMatchUpdate: () => void;
+  slotInfo: {
+    icon: any;
+    label: string;
+    time: string;
+    color: string;
+  };
+}
+
+export default function TimeSlotCard({
+  match,
+  timeSlot,
+  date,
+  currentUser,
+  onMatchUpdate,
+  slotInfo,
+}: TimeSlotCardProps) {
+  const { toast } = useToast();
+  const { icon: Icon, label, time, color } = slotInfo;
+
+  const rsvps = match?.rsvps || [];
+  const currentPlayerRsvp = rsvps.find(rsvp => rsvp.userId === currentUser.id);
+  const isUserJoined = !!currentPlayerRsvp;
+  const playerCount = rsvps.length;
+  const maxPlayers = match?.maxPlayers || 4;
+  const isFull = playerCount >= maxPlayers;
+
+  const createAndJoinMutation = useMutation({
+    mutationFn: async () => {
+      // First create the match if it doesn't exist
+      if (!match) {
+        const createResponse = await fetch("/api/matches", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            date: date.toISOString(),
+            timeSlot: timeSlot,
+            maxPlayers: 4,
+            status: "open",
+          }),
+        });
+        
+        if (!createResponse.ok) {
+          throw new Error("Failed to create match");
+        }
+        
+        const newMatch = await createResponse.json();
+        
+        // Then join the new match
+        const joinResponse = await fetch(`/api/matches/${newMatch.id}/join`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: currentUser.id }),
+        });
+        
+        if (!joinResponse.ok) {
+          throw new Error("Failed to join match");
+        }
+        
+        return joinResponse.json();
+      } else {
+        // Just join existing match
+        const response = await fetch(`/api/matches/${match.id}/join`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: currentUser.id }),
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to join match");
+        }
+        
+        return response.json();
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: "Joined match!",
+        description: `You've joined the ${label.toLowerCase()} volleyball session.`,
+      });
+      onMatchUpdate();
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to join",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const leaveMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/matches/${match!.id}/leave`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: currentUser.id }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to leave match");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Left match",
+        description: `You've left the ${label.toLowerCase()} session.`,
+      });
+      onMatchUpdate();
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to leave",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const getBorderColor = () => {
+    if (isFull) return "border-green-300";
+    if (playerCount > 0) return "border-blue-300";
+    return "border-gray-300";
+  };
+
+  const getStatusColor = () => {
+    if (isFull) return "bg-green-100 text-green-800";
+    if (playerCount > 0) return "bg-blue-100 text-blue-800";
+    return "bg-gray-100 text-gray-600";
+  };
+
+  return (
+    <div className={`p-3 rounded-lg border-2 transition-all duration-200 hover:shadow-md ${color} ${getBorderColor()}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center space-x-2">
+          <Icon className="h-4 w-4" />
+          <span className="text-sm font-medium">{label}</span>
+        </div>
+        <span className="text-xs text-gray-500">{time}</span>
+      </div>
+      
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center space-x-1">
+          <Users className="h-3 w-3 text-gray-500" />
+          <span className="text-xs text-gray-600">{playerCount}/{maxPlayers}</span>
+        </div>
+        {playerCount > 0 && (
+          <Badge className={`text-xs px-2 py-1 ${getStatusColor()}`}>
+            {isFull ? "Full" : playerCount === maxPlayers - 1 ? "Almost Full" : "Open"}
+          </Badge>
+        )}
+      </div>
+      
+      {playerCount > 0 && (
+        <div className="flex -space-x-1 mb-3">
+          {rsvps.slice(0, 3).map((rsvp) => (
+            <div key={rsvp.userId} className="player-avatar w-6 h-6 text-xs">
+              {rsvp.user.avatar}
+            </div>
+          ))}
+          {playerCount > 3 && (
+            <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-medium">
+              +{playerCount - 3}
+            </div>
+          )}
+        </div>
+      )}
+      
+      {isUserJoined ? (
+        <Button
+          variant="outline"
+          className="w-full text-xs h-8"
+          onClick={() => leaveMutation.mutate()}
+          disabled={leaveMutation.isPending}
+        >
+          {leaveMutation.isPending ? "Leaving..." : "Leave"}
+        </Button>
+      ) : isFull ? (
+        <Button
+          variant="outline"
+          className="w-full text-xs h-8 cursor-not-allowed"
+          disabled
+        >
+          Full
+        </Button>
+      ) : (
+        <Button
+          className="w-full bg-court-blue hover:bg-blue-700 text-white text-xs h-8"
+          onClick={() => createAndJoinMutation.mutate()}
+          disabled={createAndJoinMutation.isPending}
+        >
+          {createAndJoinMutation.isPending ? "Joining..." : playerCount === 0 ? "Start Match" : "Join"}
+        </Button>
+      )}
+    </div>
+  );
+}
