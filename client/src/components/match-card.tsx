@@ -1,0 +1,200 @@
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Plus } from "lucide-react";
+import { formatTime } from "@/lib/date-utils";
+import { useToast } from "@/hooks/use-toast";
+
+interface MatchCardProps {
+  match: {
+    id: number;
+    date: string;
+    time: string;
+    matchType: string;
+    maxPlayers: number;
+    status: string;
+    rsvps?: Array<{
+      userId: number;
+      user: {
+        id: number;
+        name: string;
+        avatar: string;
+      };
+    }>;
+  };
+  currentUser: {
+    id: number;
+    name: string;
+    avatar: string;
+  };
+  onMatchUpdate: () => void;
+}
+
+export default function MatchCard({ match, currentUser, onMatchUpdate }: MatchCardProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  const rsvps = match.rsvps || [];
+  const currentPlayerRsvp = rsvps.find(rsvp => rsvp.userId === currentUser.id);
+  const isUserJoined = !!currentPlayerRsvp;
+  const isFull = rsvps.length >= match.maxPlayers;
+  const isNearlyFull = rsvps.length === match.maxPlayers - 1;
+
+  const joinMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/matches/${match.id}/join`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: currentUser.id }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to join match");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Match joined!",
+        description: "You've successfully joined the match.",
+      });
+      onMatchUpdate();
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to join match",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const leaveMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/matches/${match.id}/leave`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: currentUser.id }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to leave match");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Left match",
+        description: "You've left the match.",
+      });
+      onMatchUpdate();
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to leave match",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const getStatusColor = () => {
+    if (isFull) return "bg-court-green";
+    if (isNearlyFull) return "bg-court-amber";
+    return "bg-gray-500";
+  };
+
+  const getStatusText = () => {
+    if (isFull) return match.matchType;
+    if (isNearlyFull) return "Almost Full";
+    return "Open";
+  };
+
+  const getBorderColor = () => {
+    if (isFull) return "border-green-200";
+    if (isNearlyFull) return "border-amber-200";
+    return "border-gray-200";
+  };
+
+  const renderPlayerAvatars = () => {
+    const avatars = [];
+    
+    // Add existing players
+    rsvps.forEach((rsvp) => {
+      avatars.push(
+        <div key={rsvp.userId} className="player-avatar">
+          {rsvp.user.avatar}
+        </div>
+      );
+    });
+    
+    // Add empty slots
+    const emptySlots = match.maxPlayers - rsvps.length;
+    for (let i = 0; i < emptySlots; i++) {
+      avatars.push(
+        <div
+          key={`empty-${i}`}
+          className="w-8 h-8 border-2 border-dashed border-gray-300 rounded-full flex items-center justify-center"
+        >
+          <Plus className="h-3 w-3 text-gray-400" />
+        </div>
+      );
+    }
+    
+    return avatars;
+  };
+
+  return (
+    <div className={`match-card bg-white rounded-lg p-4 border shadow-sm ${getBorderColor()}`}>
+      <div className="flex items-center justify-between mb-2">
+        <Badge className={`text-xs text-white px-2 py-1 ${getStatusColor()}`}>
+          {getStatusText()}
+        </Badge>
+        <span className="text-xs text-gray-500">
+          {formatTime(match.time)}
+        </span>
+      </div>
+      
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex -space-x-2">
+          {renderPlayerAvatars()}
+        </div>
+        <span className={`text-xs font-medium ${
+          isFull ? 'text-green-600' : 
+          isNearlyFull ? 'text-amber-600' : 
+          'text-gray-500'
+        }`}>
+          {rsvps.length}/{match.maxPlayers}
+        </span>
+      </div>
+      
+      {isUserJoined ? (
+        <Button
+          variant="outline"
+          className="w-full text-sm"
+          onClick={() => leaveMutation.mutate()}
+          disabled={leaveMutation.isPending}
+        >
+          {leaveMutation.isPending ? "Leaving..." : "Leave Match"}
+        </Button>
+      ) : isFull ? (
+        <Button
+          variant="outline"
+          className="w-full text-gray-500 cursor-not-allowed"
+          disabled
+        >
+          Full
+        </Button>
+      ) : (
+        <Button
+          className="w-full bg-court-blue hover:bg-blue-700 text-white text-sm"
+          onClick={() => joinMutation.mutate()}
+          disabled={joinMutation.isPending}
+        >
+          {joinMutation.isPending ? "Joining..." : "Join Match"}
+        </Button>
+      )}
+    </div>
+  );
+}
