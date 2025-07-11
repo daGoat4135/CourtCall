@@ -34,13 +34,13 @@ export default function WeeklyCalendar({
   const getTimeSlotInfo = (slot: string) => {
     switch (slot) {
       case "morning":
-        return { icon: Sunrise, label: "Morning", time: "8:00 AM", color: "bg-yellow-100 border-yellow-300" };
+        return { icon: Sunrise, label: "Morning", color: "bg-yellow-100 border-yellow-300" };
       case "lunch":
-        return { icon: Clock, label: "Lunch", time: "12:00 PM", color: "bg-blue-100 border-blue-300" };
+        return { icon: Clock, label: "Lunch", color: "bg-blue-100 border-blue-300" };
       case "afterwork":
-        return { icon: Moon, label: "After Work", time: "5:30 PM", color: "bg-purple-100 border-purple-300" };
+        return { icon: Moon, label: "Evening", color: "bg-purple-100 border-purple-300" };
       default:
-        return { icon: Clock, label: "Match", time: "TBD", color: "bg-gray-100 border-gray-300" };
+        return { icon: Clock, label: "Match", color: "bg-gray-100 border-gray-300" };
     }
   };
 

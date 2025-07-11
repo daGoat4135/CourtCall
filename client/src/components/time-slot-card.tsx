@@ -35,7 +35,6 @@ interface TimeSlotCardProps {
   slotInfo: {
     icon: any;
     label: string;
-    time: string;
     color: string;
   };
 }
@@ -50,7 +49,7 @@ export default function TimeSlotCard({
   onNameSubmit,
 }: TimeSlotCardProps) {
   const { toast } = useToast();
-  const { icon: Icon, label, time, color } = slotInfo;
+  const { icon: Icon, label, color } = slotInfo;
   const [nameInput, setNameInput] = useState("");
   const [showNameInput, setShowNameInput] = useState(false);
 
@@ -189,7 +188,6 @@ export default function TimeSlotCard({
           <Icon className="h-4 w-4" />
           <span className="text-sm font-medium">{label}</span>
         </div>
-        <span className="text-xs text-gray-500">{time}</span>
       </div>
       
       <div className="flex items-center justify-between mb-2">
