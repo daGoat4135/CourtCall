@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { addWeeks, subWeeks } from "date-fns";
 import Header from "@/components/header";
@@ -6,11 +6,52 @@ import WeeklyCalendar from "@/components/weekly-calendar";
 import Leaderboard from "@/components/leaderboard";
 import StatsCards from "@/components/stats-cards";
 import UpcomingReminders from "@/components/upcoming-reminders";
+import NameInputDialog from "@/components/name-input-dialog";
 import { formatWeekRange } from "@/lib/date-utils";
 
 export default function Dashboard() {
   const [currentWeek, setCurrentWeek] = useState(new Date());
-  const [currentUser] = useState({ id: 1, name: "John Doe", avatar: "JD" }); // Mock current user
+  const [currentUser, setCurrentUser] = useState<{ id: number; name: string; avatar: string } | null>(null);
+  const [showNameDialog, setShowNameDialog] = useState(false);
+
+  // Check for stored user on mount
+  useEffect(() => {
+    const storedUser = localStorage.getItem('courtcall-user');
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        setCurrentUser(user);
+      } catch (error) {
+        console.error('Failed to parse stored user:', error);
+        setShowNameDialog(true);
+      }
+    } else {
+      setShowNameDialog(true);
+    }
+  }, []);
+
+  const handleNameSubmit = (name: string) => {
+    const initials = name.split(' ').map(n => n.charAt(0).toUpperCase()).join('').slice(0, 2);
+    const user = {
+      id: Date.now(), // Simple ID generation
+      name: name,
+      avatar: initials
+    };
+    
+    localStorage.setItem('courtcall-user', JSON.stringify(user));
+    setCurrentUser(user);
+    setShowNameDialog(false);
+  };
+
+  // Don't render anything until we have a user
+  if (!currentUser) {
+    return (
+      <NameInputDialog 
+        open={showNameDialog} 
+        onNameSubmit={handleNameSubmit} 
+      />
+    );
+  }
 
   const { data: matches = [], isLoading: matchesLoading, refetch: refetchMatches } = useQuery({
     queryKey: ["/api/matches/week", currentWeek.toISOString()],
@@ -63,9 +104,15 @@ export default function Dashboard() {
     activePlayers: new Set(matches.flatMap(m => m.rsvps?.map(r => r.userId) || [])).size,
   };
 
+  const handleChangeUser = () => {
+    localStorage.removeItem('courtcall-user');
+    setCurrentUser(null);
+    setShowNameDialog(true);
+  };
+
   return (
     <div className="bg-gray-50 min-h-screen">
-      <Header currentUser={currentUser} />
+      <Header currentUser={currentUser} onChangeUser={handleChangeUser} />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -98,6 +145,11 @@ export default function Dashboard() {
           </div>
         </div>
       </main>
+      
+      <NameInputDialog 
+        open={showNameDialog} 
+        onNameSubmit={handleNameSubmit} 
+      />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Bell, Volleyball } from "lucide-react";
+import { Bell, Volleyball, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface HeaderProps {
@@ -7,9 +7,16 @@ interface HeaderProps {
     name: string;
     avatar: string;
   };
+  onChangeUser?: () => void;
 }
 
-export default function Header({ currentUser }: HeaderProps) {
+export default function Header({ currentUser, onChangeUser }: HeaderProps) {
+  const handleUserClick = () => {
+    if (onChangeUser) {
+      onChangeUser();
+    }
+  };
+
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -28,8 +35,16 @@ export default function Header({ currentUser }: HeaderProps) {
             <Button variant="ghost" size="sm" className="p-2">
               <Bell className="h-4 w-4 text-gray-500" />
             </Button>
-            <div className="player-avatar">
-              {currentUser.avatar}
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium text-gray-700">Hi, {currentUser.name}!</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleUserClick}
+                className="player-avatar hover:ring-2 hover:ring-court-blue cursor-pointer"
+              >
+                {currentUser.avatar}
+              </Button>
             </div>
           </div>
         </div>

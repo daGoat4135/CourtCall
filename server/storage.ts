@@ -19,6 +19,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
+  getOrCreateUserByName(name: string): Promise<User>;
 
   // Match operations
   getMatch(id: number): Promise<Match | undefined>;
@@ -167,6 +168,26 @@ export class MemStorage implements IStorage {
     const user: User = { ...insertUser, id };
     this.users.set(id, user);
     return user;
+  }
+
+  async getOrCreateUserByName(name: string): Promise<User> {
+    // Check if user already exists by name
+    const existingUser = Array.from(this.users.values()).find(user => user.name === name);
+    if (existingUser) {
+      return existingUser;
+    }
+    
+    // Create new user
+    const initials = name.split(' ').map(n => n.charAt(0).toUpperCase()).join('').slice(0, 2);
+    const username = name.toLowerCase().replace(/\s+/g, '.');
+    
+    return this.createUser({
+      username,
+      password: 'temp', // Not used for our simple auth
+      name,
+      department: 'Team',
+      avatar: initials
+    });
   }
 
   async getAllUsers(): Promise<User[]> {

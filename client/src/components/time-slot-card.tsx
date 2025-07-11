@@ -49,7 +49,7 @@ export default function TimeSlotCard({
   const { icon: Icon, label, time, color } = slotInfo;
 
   const rsvps = match?.rsvps || [];
-  const currentPlayerRsvp = rsvps.find(rsvp => rsvp.userId === currentUser.id);
+  const currentPlayerRsvp = rsvps.find(rsvp => rsvp.user.name === currentUser.name);
   const isUserJoined = !!currentPlayerRsvp;
   const playerCount = rsvps.length;
   const maxPlayers = match?.maxPlayers || 4;
@@ -80,7 +80,7 @@ export default function TimeSlotCard({
         const joinResponse = await fetch(`/api/matches/${newMatch.id}/join`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: currentUser.id }),
+          body: JSON.stringify({ userName: currentUser.name }),
         });
         
         if (!joinResponse.ok) {
@@ -93,7 +93,7 @@ export default function TimeSlotCard({
         const response = await fetch(`/api/matches/${match.id}/join`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: currentUser.id }),
+          body: JSON.stringify({ userName: currentUser.name }),
         });
         
         if (!response.ok) {
@@ -125,7 +125,7 @@ export default function TimeSlotCard({
       const response = await fetch(`/api/matches/${match!.id}/leave`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: currentUser.id }),
+        body: JSON.stringify({ userName: currentUser.name }),
       });
       
       if (!response.ok) {

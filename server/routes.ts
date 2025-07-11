@@ -52,11 +52,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Join match (create RSVP)
+  // Join match (create RSVP) - supports both existing users and new users by name
   app.post("/api/matches/:matchId/join", async (req, res) => {
     try {
       const matchId = parseInt(req.params.matchId);
-      const { userId } = req.body;
+      const { userId, userName } = req.body;
       
       // Check if match exists
       const match = await storage.getMatch(matchId);
@@ -64,9 +64,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Match not found" });
       }
       
+      let actualUserId = userId;
+      
+      // If userName is provided instead of userId, create or find the user
+      if (userName && !userId) {
+        const user = await storage.getOrCreateUserByName(userName);
+        actualUserId = user.id;
+      }
+      
       // Check if user is already in the match
       const existingRsvps = await storage.getRsvpsByMatch(matchId);
-      if (existingRsvps.some(rsvp => rsvp.userId === userId)) {
+      if (existingRsvps.some(rsvp => rsvp.userId === actualUserId)) {
         return res.status(400).json({ error: "User already joined this match" });
       }
       
@@ -78,7 +86,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const rsvp = await storage.createRsvp({
         matchId,
-        userId,
+        userId: actualUserId,
         status: "confirmed"
       });
       
@@ -94,13 +102,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Leave match (delete RSVP)
+  // Leave match (delete RSVP) - supports both userId and userName
   app.delete("/api/matches/:matchId/leave", async (req, res) => {
     try {
       const matchId = parseInt(req.params.matchId);
-      const { userId } = req.body;
+      const { userId, userName } = req.body;
       
-      const success = await storage.deleteRsvp(matchId, userId);
+      let actualUserId = userId;
+      
+      // If userName is provided, find the user
+      if (userName && !userId) {
+        const user = await storage.getOrCreateUserByName(userName);
+        actualUserId = user.id;
+      }
+      
+      const success = await storage.deleteRsvp(matchId, actualUserId);
       if (!success) {
         return res.status(404).json({ error: "RSVP not found" });
       }
