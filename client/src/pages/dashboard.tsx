@@ -30,6 +30,47 @@ export default function Dashboard() {
     }
   }, []);
 
+  // All hooks must be called before any conditional returns
+  const { data: matches = [], isLoading: matchesLoading, refetch: refetchMatches } = useQuery({
+    queryKey: ["/api/matches/week", currentWeek.toISOString()],
+    queryFn: async () => {
+      const response = await fetch(`/api/matches/week?date=${currentWeek.toISOString()}`);
+      if (!response.ok) throw new Error("Failed to fetch matches");
+      return response.json();
+    },
+    enabled: !!currentUser, // Only run query when user exists
+  });
+
+  const { data: leaderboard = [], isLoading: leaderboardLoading } = useQuery({
+    queryKey: ["/api/leaderboard"],
+    queryFn: async () => {
+      const response = await fetch("/api/leaderboard");
+      if (!response.ok) throw new Error("Failed to fetch leaderboard");
+      return response.json();
+    },
+    enabled: !!currentUser, // Only run query when user exists
+  });
+
+  const { data: userStats } = useQuery({
+    queryKey: ["/api/users", currentUser?.id, "stats"],
+    queryFn: async () => {
+      const response = await fetch(`/api/users/${currentUser!.id}/stats`);
+      if (!response.ok) throw new Error("Failed to fetch user stats");
+      return response.json();
+    },
+    enabled: !!currentUser, // Only run query when user exists
+  });
+
+  const { data: notifications = [] } = useQuery({
+    queryKey: ["/api/notifications", currentUser?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/notifications/${currentUser!.id}`);
+      if (!response.ok) throw new Error("Failed to fetch notifications");
+      return response.json();
+    },
+    enabled: !!currentUser, // Only run query when user exists
+  });
+
   const handleNameSubmit = (name: string) => {
     const initials = name.split(' ').map(n => n.charAt(0).toUpperCase()).join('').slice(0, 2);
     const user = {
@@ -52,42 +93,6 @@ export default function Dashboard() {
       />
     );
   }
-
-  const { data: matches = [], isLoading: matchesLoading, refetch: refetchMatches } = useQuery({
-    queryKey: ["/api/matches/week", currentWeek.toISOString()],
-    queryFn: async () => {
-      const response = await fetch(`/api/matches/week?date=${currentWeek.toISOString()}`);
-      if (!response.ok) throw new Error("Failed to fetch matches");
-      return response.json();
-    },
-  });
-
-  const { data: leaderboard = [], isLoading: leaderboardLoading } = useQuery({
-    queryKey: ["/api/leaderboard"],
-    queryFn: async () => {
-      const response = await fetch("/api/leaderboard");
-      if (!response.ok) throw new Error("Failed to fetch leaderboard");
-      return response.json();
-    },
-  });
-
-  const { data: userStats } = useQuery({
-    queryKey: ["/api/users", currentUser.id, "stats"],
-    queryFn: async () => {
-      const response = await fetch(`/api/users/${currentUser.id}/stats`);
-      if (!response.ok) throw new Error("Failed to fetch user stats");
-      return response.json();
-    },
-  });
-
-  const { data: notifications = [] } = useQuery({
-    queryKey: ["/api/notifications", currentUser.id],
-    queryFn: async () => {
-      const response = await fetch(`/api/notifications/${currentUser.id}`);
-      if (!response.ok) throw new Error("Failed to fetch notifications");
-      return response.json();
-    },
-  });
 
   const navigateWeek = (direction: "prev" | "next") => {
     setCurrentWeek(prev => 
