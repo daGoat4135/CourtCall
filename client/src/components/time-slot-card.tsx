@@ -105,10 +105,11 @@ export default function TimeSlotCard({
         });
         
         if (!joinResponse.ok) {
-          throw new Error("Failed to join match");
+          const error = await joinResponse.json();
+          throw new Error(error.error || "Failed to join match");
         }
         
-        return joinResponse.json();
+        return { newMatch, rsvp: await joinResponse.json() };
       } else {
         // Just join existing match
         const response = await fetch(`/api/matches/${match.id}/join`, {
@@ -122,7 +123,7 @@ export default function TimeSlotCard({
           throw new Error(error.error || "Failed to join match");
         }
         
-        return response.json();
+        return { rsvp: await response.json() };
       }
     },
     onSuccess: () => {
