@@ -28,20 +28,36 @@ export class ReplitStorage implements IStorage {
   private async initializeCounters() {
     // Initialize ID counters if they don't exist
     const userCount = await this.db.get("userIdCounter");
-    if (!userCount) await this.db.set("userIdCounter", 1);
-    else this.currentUserId = userCount;
+    if (userCount === null || userCount === undefined) {
+      this.currentUserId = 1;
+      await this.db.set("userIdCounter", 1);
+    } else {
+      this.currentUserId = userCount;
+    }
 
     const matchCount = await this.db.get("matchIdCounter");
-    if (!matchCount) await this.db.set("matchIdCounter", 1);
-    else this.currentMatchId = matchCount;
+    if (matchCount === null || matchCount === undefined) {
+      this.currentMatchId = 1;
+      await this.db.set("matchIdCounter", 1);
+    } else {
+      this.currentMatchId = matchCount;
+    }
 
     const rsvpCount = await this.db.get("rsvpIdCounter");
-    if (!rsvpCount) await this.db.set("rsvpIdCounter", 1);
-    else this.currentRsvpId = rsvpCount;
+    if (rsvpCount === null || rsvpCount === undefined) {
+      this.currentRsvpId = 1;
+      await this.db.set("rsvpIdCounter", 1);
+    } else {
+      this.currentRsvpId = rsvpCount;
+    }
 
     const notificationCount = await this.db.get("notificationIdCounter");
-    if (!notificationCount) await this.db.set("notificationIdCounter", 1);
-    else this.currentNotificationId = notificationCount;
+    if (notificationCount === null || notificationCount === undefined) {
+      this.currentNotificationId = 1;
+      await this.db.set("notificationIdCounter", 1);
+    } else {
+      this.currentNotificationId = notificationCount;
+    }
   }
 
   private async initializeSampleData() {
