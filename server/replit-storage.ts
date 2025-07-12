@@ -1,6 +1,9 @@
 
-import Database from "@replit/database";
 import { 
+  users, 
+  matches, 
+  rsvps, 
+  notifications,
   type User, 
   type InsertUser,
   type Match,
@@ -13,73 +16,46 @@ import {
 import { IStorage } from "./storage";
 
 export class ReplitStorage implements IStorage {
-  private db: Database;
+  private db: any;
   private currentUserId: number = 1;
   private currentMatchId: number = 1;
   private currentRsvpId: number = 1;
   private currentNotificationId: number = 1;
-  private initialized: boolean = false;
-  private initPromise: Promise<void>;
 
   constructor() {
-    this.db = new Database();
-    this.initPromise = this.initialize();
-  }
-
-  private async initialize() {
-    await this.initializeCounters();
-    await this.initializeSampleData();
-    this.initialized = true;
+    this.db = (global as any).db || {};
+    (global as any).db = this.db;
+    this.ensureInitialized();
   }
 
   private async ensureInitialized() {
-    if (!this.initialized) {
-      await this.initPromise;
+    // Initialize counters if they don't exist
+    if (!this.db.userIdCounter) {
+      this.db.userIdCounter = 1;
     }
-  }
-
-  private async initializeCounters() {
-    // Initialize ID counters if they don't exist
-    const userCount = await this.db.get("userIdCounter");
-    if (userCount === null || userCount === undefined) {
-      this.currentUserId = 1;
-      await this.db.set("userIdCounter", 1);
-    } else {
-      this.currentUserId = userCount;
+    if (!this.db.matchIdCounter) {
+      this.db.matchIdCounter = 1;
     }
-
-    const matchCount = await this.db.get("matchIdCounter");
-    if (matchCount === null || matchCount === undefined) {
-      this.currentMatchId = 1;
-      await this.db.set("matchIdCounter", 1);
-    } else {
-      this.currentMatchId = matchCount;
+    if (!this.db.rsvpIdCounter) {
+      this.db.rsvpIdCounter = 1;
+    }
+    if (!this.db.notificationIdCounter) {
+      this.db.notificationIdCounter = 1;
     }
 
-    const rsvpCount = await this.db.get("rsvpIdCounter");
-    if (rsvpCount === null || rsvpCount === undefined) {
-      this.currentRsvpId = 1;
-      await this.db.set("rsvpIdCounter", 1);
-    } else {
-      this.currentRsvpId = rsvpCount;
-    }
+    this.currentUserId = this.db.userIdCounter;
+    this.currentMatchId = this.db.matchIdCounter;
+    this.currentRsvpId = this.db.rsvpIdCounter;
+    this.currentNotificationId = this.db.notificationIdCounter;
 
-    const notificationCount = await this.db.get("notificationIdCounter");
-    if (notificationCount === null || notificationCount === undefined) {
-      this.currentNotificationId = 1;
-      await this.db.set("notificationIdCounter", 1);
-    } else {
-      this.currentNotificationId = notificationCount;
+    // Initialize with sample data if empty
+    const users = this.db.users || {};
+    if (Object.keys(users).length === 0) {
+      await this.initializeSampleData();
     }
   }
 
   private async initializeSampleData() {
-    // Check if sample data already exists
-    const existingUsers = await this.db.get("users");
-    if (existingUsers && Object.keys(existingUsers).length > 0) {
-      return; // Sample data already exists
-    }
-
     const sampleUsers: InsertUser[] = [
       { username: "john.doe", password: "password", name: "John Doe", department: "Engineering", avatar: "JD" },
       { username: "alex.martinez", password: "password", name: "Alex Martinez", department: "Engineering", avatar: "AM" },
@@ -123,22 +99,26 @@ export class ReplitStorage implements IStorage {
       }
     }
     
+    // Add some sample RSVPs to show the interface in action
     await this.addSampleRSVPs();
   }
 
   private async addSampleRSVPs() {
-    const matches = await this.getAllMatches();
+    // Get some matches to add RSVPs to
+    const matches = this.db.matches || {};
+    const matchList = Object.values(matches) as Match[];
     
-    if (matches.length > 0) {
+    // Add RSVPs to a few matches to show different states
+    if (matchList.length > 0) {
       // Join first lunch match with 2 players
-      const lunchMatch = matches.find(m => m.timeSlot === "lunch");
+      const lunchMatch = matchList.find(m => m.timeSlot === "lunch");
       if (lunchMatch) {
         await this.createRsvp({ matchId: lunchMatch.id, userId: 1, status: "confirmed" });
         await this.createRsvp({ matchId: lunchMatch.id, userId: 2, status: "confirmed" });
       }
       
       // Join first morning match with 3 players (almost full)
-      const morningMatch = matches.find(m => m.timeSlot === "morning");
+      const morningMatch = matchList.find(m => m.timeSlot === "morning");
       if (morningMatch) {
         await this.createRsvp({ matchId: morningMatch.id, userId: 3, status: "confirmed" });
         await this.createRsvp({ matchId: morningMatch.id, userId: 4, status: "confirmed" });
@@ -146,7 +126,7 @@ export class ReplitStorage implements IStorage {
       }
       
       // Fill one afterwork match completely
-      const afterworkMatch = matches.find(m => m.timeSlot === "afterwork");
+      const afterworkMatch = matchList.find(m => m.timeSlot === "afterwork");
       if (afterworkMatch) {
         await this.createRsvp({ matchId: afterworkMatch.id, userId: 6, status: "confirmed" });
         await this.createRsvp({ matchId: afterworkMatch.id, userId: 7, status: "confirmed" });
@@ -159,12 +139,12 @@ export class ReplitStorage implements IStorage {
 
   // User operations
   async getUser(id: number): Promise<User | undefined> {
-    const users = await this.db.get("users") || {};
+    const users = this.db.users || {};
     return users[id];
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const users = await this.db.get("users") || {};
+    const users = this.db.users || {};
     return Object.values(users).find((user: any) => user.username === username);
   }
 
@@ -172,30 +152,32 @@ export class ReplitStorage implements IStorage {
     await this.ensureInitialized();
     
     const id = this.currentUserId++;
-    await this.db.set("userIdCounter", this.currentUserId);
+    this.db.userIdCounter = this.currentUserId;
     
     const user: User = { ...insertUser, id };
     
-    const users = await this.db.get("users") || {};
+    const users = this.db.users || {};
     users[id] = user;
-    await this.db.set("users", users);
+    this.db.users = users;
     
     return user;
   }
 
   async getOrCreateUserByName(name: string): Promise<User> {
-    const users = await this.db.get("users") || {};
+    // Check if user already exists by name
+    const users = this.db.users || {};
     const existingUser = Object.values(users).find((user: any) => user.name === name);
     if (existingUser) {
       return existingUser as User;
     }
     
+    // Create new user
     const initials = name.split(' ').map(n => n.charAt(0).toUpperCase()).join('').slice(0, 2);
     const username = name.toLowerCase().replace(/\s+/g, '.');
     
     return this.createUser({
       username,
-      password: 'temp',
+      password: 'temp', // Not used for our simple auth
       name,
       department: 'Team',
       avatar: initials
@@ -203,24 +185,19 @@ export class ReplitStorage implements IStorage {
   }
 
   async getAllUsers(): Promise<User[]> {
-    const users = await this.db.get("users") || {};
+    const users = this.db.users || {};
     return Object.values(users);
   }
 
   // Match operations
   async getMatch(id: number): Promise<Match | undefined> {
-    const matches = await this.db.get("matches") || {};
+    const matches = this.db.matches || {};
     return matches[id];
   }
 
-  async getAllMatches(): Promise<Match[]> {
-    const matches = await this.db.get("matches") || {};
-    return Object.values(matches);
-  }
-
   async getMatchesByDateRange(startDate: Date, endDate: Date): Promise<Match[]> {
-    const matches = await this.getAllMatches();
-    return matches.filter(match => {
+    const matches = this.db.matches || {};
+    return Object.values(matches).filter((match: any) => {
       const matchDate = new Date(match.date);
       return matchDate >= startDate && matchDate <= endDate;
     });
@@ -229,14 +206,8 @@ export class ReplitStorage implements IStorage {
   async createMatch(insertMatch: InsertMatch): Promise<Match> {
     await this.ensureInitialized();
     
-    // Get the current counter and increment it atomically
-    const currentCounter = await this.db.get("matchIdCounter") || 1;
-    const id = currentCounter;
-    const newCounter = currentCounter + 1;
-    
-    // Update both the counter and match in sequence
-    await this.db.set("matchIdCounter", newCounter);
-    this.currentMatchId = newCounter;
+    const id = this.currentMatchId++;
+    this.db.matchIdCounter = this.currentMatchId;
     
     const match: Match = { 
       ...insertMatch, 
@@ -244,44 +215,42 @@ export class ReplitStorage implements IStorage {
       createdAt: new Date() 
     };
     
-    const matches = await this.db.get("matches") || {};
+    const matches = this.db.matches || {};
     matches[id] = match;
-    await this.db.set("matches", matches);
-    
-    console.log("Created match with ID:", id, "Match object:", match);
+    this.db.matches = matches;
     
     return match;
   }
 
   async updateMatch(id: number, updates: Partial<Match>): Promise<Match | undefined> {
-    const matches = await this.db.get("matches") || {};
+    const matches = this.db.matches || {};
     const match = matches[id];
     if (!match) return undefined;
     
     const updatedMatch = { ...match, ...updates };
     matches[id] = updatedMatch;
-    await this.db.set("matches", matches);
+    this.db.matches = matches;
     
     return updatedMatch;
   }
 
   async deleteMatch(id: number): Promise<boolean> {
-    const matches = await this.db.get("matches") || {};
+    const matches = this.db.matches || {};
     if (!matches[id]) return false;
     
     delete matches[id];
-    await this.db.set("matches", matches);
+    this.db.matches = matches;
     return true;
   }
 
   // RSVP operations
   async getRsvpsByMatch(matchId: number): Promise<Rsvp[]> {
-    const rsvps = await this.db.get("rsvps") || {};
+    const rsvps = this.db.rsvps || {};
     return Object.values(rsvps).filter((rsvp: any) => rsvp.matchId === matchId);
   }
 
   async getRsvpsByUser(userId: number): Promise<Rsvp[]> {
-    const rsvps = await this.db.get("rsvps") || {};
+    const rsvps = this.db.rsvps || {};
     return Object.values(rsvps).filter((rsvp: any) => rsvp.userId === userId);
   }
 
@@ -289,7 +258,7 @@ export class ReplitStorage implements IStorage {
     await this.ensureInitialized();
     
     const id = this.currentRsvpId++;
-    await this.db.set("rsvpIdCounter", this.currentRsvpId);
+    this.db.rsvpIdCounter = this.currentRsvpId;
     
     const rsvp: Rsvp = { 
       ...insertRsvp, 
@@ -297,48 +266,49 @@ export class ReplitStorage implements IStorage {
       joinedAt: new Date() 
     };
     
-    const rsvps = await this.db.get("rsvps") || {};
+    const rsvps = this.db.rsvps || {};
     rsvps[id] = rsvp;
-    await this.db.set("rsvps", rsvps);
+    this.db.rsvps = rsvps;
     
     return rsvp;
   }
 
   async deleteRsvp(matchId: number, userId: number): Promise<boolean> {
-    const rsvps = await this.db.get("rsvps") || {};
-    const rsvpToDelete = Object.values(rsvps).find((r: any) => r.matchId === matchId && r.userId === userId);
-    if (!rsvpToDelete) return false;
+    const rsvps = this.db.rsvps || {};
+    const rsvp = Object.values(rsvps).find((r: any) => r.matchId === matchId && r.userId === userId);
+    if (!rsvp) return false;
     
-    delete rsvps[(rsvpToDelete as any).id];
-    await this.db.set("rsvps", rsvps);
+    delete rsvps[(rsvp as any).id];
+    this.db.rsvps = rsvps;
     return true;
   }
 
   async getRsvpCount(matchId: number): Promise<number> {
-    const rsvps = await this.getRsvpsByMatch(matchId);
-    return rsvps.filter(rsvp => rsvp.status !== "cancelled").length;
+    const rsvps = this.db.rsvps || {};
+    return Object.values(rsvps).filter((rsvp: any) => rsvp.matchId === matchId && rsvp.status !== "cancelled").length;
   }
 
   async getConfirmedRsvpCount(matchId: number): Promise<number> {
-    const rsvps = await this.getRsvpsByMatch(matchId);
-    return rsvps.filter(rsvp => rsvp.status === "confirmed").length;
+    const rsvps = this.db.rsvps || {};
+    return Object.values(rsvps).filter((rsvp: any) => rsvp.matchId === matchId && rsvp.status === "confirmed").length;
   }
 
   async getWaitlistedRsvps(matchId: number): Promise<Rsvp[]> {
-    const rsvps = await this.getRsvpsByMatch(matchId);
-    return rsvps.filter(rsvp => rsvp.status === "waitlisted");
+    const rsvps = this.db.rsvps || {};
+    return Object.values(rsvps).filter((rsvp: any) => rsvp.matchId === matchId && rsvp.status === "waitlisted");
   }
 
   async promoteFromWaitlist(matchId: number): Promise<Rsvp | null> {
     const waitlisted = await this.getWaitlistedRsvps(matchId);
     if (waitlisted.length === 0) return null;
     
+    // Get the first waitlisted person (first come, first served)
     const toPromote = waitlisted.sort((a, b) => a.joinedAt.getTime() - b.joinedAt.getTime())[0];
     toPromote.status = "confirmed";
     
-    const rsvps = await this.db.get("rsvps") || {};
+    const rsvps = this.db.rsvps || {};
     rsvps[toPromote.id] = toPromote;
-    await this.db.set("rsvps", rsvps);
+    this.db.rsvps = rsvps;
     
     return toPromote;
   }
@@ -348,7 +318,7 @@ export class ReplitStorage implements IStorage {
     await this.ensureInitialized();
     
     const id = this.currentNotificationId++;
-    await this.db.set("notificationIdCounter", this.currentNotificationId);
+    this.db.notificationIdCounter = this.currentNotificationId;
     
     const notification: Notification = { 
       ...insertNotification, 
@@ -356,24 +326,25 @@ export class ReplitStorage implements IStorage {
       createdAt: new Date() 
     };
     
-    const notifications = await this.db.get("notifications") || {};
+    const notifications = this.db.notifications || {};
     notifications[id] = notification;
-    await this.db.set("notifications", notifications);
+    this.db.notifications = notifications;
     
     return notification;
   }
 
   async getNotificationsByUser(userId: number): Promise<Notification[]> {
-    const notifications = await this.db.get("notifications") || {};
+    const notifications = this.db.notifications || {};
     return Object.values(notifications).filter((notification: any) => notification.userId === userId);
   }
 
   async markNotificationSent(id: number): Promise<void> {
-    const notifications = await this.db.get("notifications") || {};
+    const notifications = this.db.notifications || {};
     const notification = notifications[id];
     if (notification) {
       notification.sent = true;
-      await this.db.set("notifications", notifications);
+      notifications[id] = notification;
+      this.db.notifications = notifications;
     }
   }
 
