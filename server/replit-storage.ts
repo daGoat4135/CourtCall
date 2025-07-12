@@ -25,34 +25,53 @@ export class ReplitStorage implements IStorage {
   constructor() {
     this.db = (global as any).db || {};
     (global as any).db = this.db;
-    this.ensureInitialized();
+    // Initialize counters and sample data if needed
+    this.initializeIfNeeded();
   }
 
-  private async ensureInitialized() {
+  private initializeIfNeeded() {
     // Initialize counters if they don't exist
     if (!this.db.userIdCounter) {
       this.db.userIdCounter = 1;
+      this.currentUserId = 1;
+    } else {
+      this.currentUserId = this.db.userIdCounter;
     }
+    
     if (!this.db.matchIdCounter) {
       this.db.matchIdCounter = 1;
+      this.currentMatchId = 1;
+    } else {
+      this.currentMatchId = this.db.matchIdCounter;
     }
+    
     if (!this.db.rsvpIdCounter) {
       this.db.rsvpIdCounter = 1;
+      this.currentRsvpId = 1;
+    } else {
+      this.currentRsvpId = this.db.rsvpIdCounter;
     }
+    
     if (!this.db.notificationIdCounter) {
       this.db.notificationIdCounter = 1;
+      this.currentNotificationId = 1;
+    } else {
+      this.currentNotificationId = this.db.notificationIdCounter;
     }
 
-    this.currentUserId = this.db.userIdCounter;
-    this.currentMatchId = this.db.matchIdCounter;
-    this.currentRsvpId = this.db.rsvpIdCounter;
-    this.currentNotificationId = this.db.notificationIdCounter;
-
-    // Initialize with sample data if empty
+    // Initialize with sample data if empty (but don't await, do it in background)
     const users = this.db.users || {};
     if (Object.keys(users).length === 0) {
-      await this.initializeSampleData();
+      // Don't await here to avoid circular dependency
+      this.initializeSampleDataAsync();
     }
+  }
+
+  private async initializeSampleDataAsync() {
+    // Run initialization in background
+    setTimeout(async () => {
+      await this.initializeSampleData();
+    }, 0);
   }
 
   private async initializeSampleData() {
@@ -149,7 +168,11 @@ export class ReplitStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    await this.ensureInitialized();
+    // Initialize counters if they don't exist
+    if (!this.db.userIdCounter) {
+      this.db.userIdCounter = 1;
+      this.currentUserId = 1;
+    }
     
     const id = this.currentUserId++;
     this.db.userIdCounter = this.currentUserId;
@@ -204,7 +227,11 @@ export class ReplitStorage implements IStorage {
   }
 
   async createMatch(insertMatch: InsertMatch): Promise<Match> {
-    await this.ensureInitialized();
+    // Initialize counters if they don't exist
+    if (!this.db.matchIdCounter) {
+      this.db.matchIdCounter = 1;
+      this.currentMatchId = 1;
+    }
     
     const id = this.currentMatchId++;
     this.db.matchIdCounter = this.currentMatchId;
@@ -255,7 +282,11 @@ export class ReplitStorage implements IStorage {
   }
 
   async createRsvp(insertRsvp: InsertRsvp): Promise<Rsvp> {
-    await this.ensureInitialized();
+    // Initialize counters if they don't exist
+    if (!this.db.rsvpIdCounter) {
+      this.db.rsvpIdCounter = 1;
+      this.currentRsvpId = 1;
+    }
     
     const id = this.currentRsvpId++;
     this.db.rsvpIdCounter = this.currentRsvpId;
@@ -315,7 +346,11 @@ export class ReplitStorage implements IStorage {
 
   // Notification operations
   async createNotification(insertNotification: InsertNotification): Promise<Notification> {
-    await this.ensureInitialized();
+    // Initialize counters if they don't exist
+    if (!this.db.notificationIdCounter) {
+      this.db.notificationIdCounter = 1;
+      this.currentNotificationId = 1;
+    }
     
     const id = this.currentNotificationId++;
     this.db.notificationIdCounter = this.currentNotificationId;
