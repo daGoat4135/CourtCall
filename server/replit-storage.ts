@@ -196,6 +196,11 @@ export class ReplitStorage implements IStorage {
   }
 
   async createMatch(insertMatch: InsertMatch): Promise<Match> {
+    // Ensure currentMatchId is properly initialized
+    if (!this.currentMatchId || this.currentMatchId === 0) {
+      this.currentMatchId = 1;
+    }
+    
     const id = this.currentMatchId++;
     await this.db.set("matchIdCounter", this.currentMatchId);
     
