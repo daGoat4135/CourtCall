@@ -229,8 +229,14 @@ export class ReplitStorage implements IStorage {
   async createMatch(insertMatch: InsertMatch): Promise<Match> {
     await this.ensureInitialized();
     
-    const id = this.currentMatchId++;
-    await this.db.set("matchIdCounter", this.currentMatchId);
+    // Get the current counter and increment it atomically
+    const currentCounter = await this.db.get("matchIdCounter") || 1;
+    const id = currentCounter;
+    const newCounter = currentCounter + 1;
+    
+    // Update both the counter and match in sequence
+    await this.db.set("matchIdCounter", newCounter);
+    this.currentMatchId = newCounter;
     
     const match: Match = { 
       ...insertMatch, 
@@ -241,6 +247,8 @@ export class ReplitStorage implements IStorage {
     const matches = await this.db.get("matches") || {};
     matches[id] = match;
     await this.db.set("matches", matches);
+    
+    console.log("Created match with ID:", id, "Match object:", match);
     
     return match;
   }
