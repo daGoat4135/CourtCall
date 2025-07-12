@@ -1,8 +1,6 @@
+
+import Database from "@replit/database";
 import { 
-  users, 
-  matches, 
-  rsvps, 
-  notifications,
   type User, 
   type InsertUser,
   type Match,
@@ -12,70 +10,47 @@ import {
   type Notification,
   type InsertNotification
 } from "@shared/schema";
+import { IStorage } from "./storage";
 
-export interface IStorage {
-  // User operations
-  getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  getAllUsers(): Promise<User[]>;
-  getOrCreateUserByName(name: string): Promise<User>;
-
-  // Match operations
-  getMatch(id: number): Promise<Match | undefined>;
-  getMatchesByDateRange(startDate: Date, endDate: Date): Promise<Match[]>;
-  createMatch(match: InsertMatch): Promise<Match>;
-  updateMatch(id: number, updates: Partial<Match>): Promise<Match | undefined>;
-  deleteMatch(id: number): Promise<boolean>;
-
-  // RSVP operations
-  getRsvpsByMatch(matchId: number): Promise<Rsvp[]>;
-  getRsvpsByUser(userId: number): Promise<Rsvp[]>;
-  createRsvp(rsvp: InsertRsvp): Promise<Rsvp>;
-  deleteRsvp(matchId: number, userId: number): Promise<boolean>;
-  getRsvpCount(matchId: number): Promise<number>;
-  getConfirmedRsvpCount(matchId: number): Promise<number>;
-  getWaitlistedRsvps(matchId: number): Promise<Rsvp[]>;
-  promoteFromWaitlist(matchId: number): Promise<Rsvp | null>;
-
-  // Notification operations
-  createNotification(notification: InsertNotification): Promise<Notification>;
-  getNotificationsByUser(userId: number): Promise<Notification[]>;
-  markNotificationSent(id: number): Promise<void>;
-
-  // Analytics
-  getPlayerStats(startDate: Date, endDate: Date): Promise<Array<{
-    userId: number;
-    user: User;
-    gameCount: number;
-  }>>;
-}
-
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private matches: Map<number, Match>;
-  private rsvps: Map<number, Rsvp>;
-  private notifications: Map<number, Notification>;
-  private currentUserId: number;
-  private currentMatchId: number;
-  private currentRsvpId: number;
-  private currentNotificationId: number;
+export class ReplitStorage implements IStorage {
+  private db: Database;
+  private currentUserId: number = 1;
+  private currentMatchId: number = 1;
+  private currentRsvpId: number = 1;
+  private currentNotificationId: number = 1;
 
   constructor() {
-    this.users = new Map();
-    this.matches = new Map();
-    this.rsvps = new Map();
-    this.notifications = new Map();
-    this.currentUserId = 1;
-    this.currentMatchId = 1;
-    this.currentRsvpId = 1;
-    this.currentNotificationId = 1;
-
-    // Initialize with some sample users
+    this.db = new Database();
+    this.initializeCounters();
     this.initializeSampleData();
   }
 
-  private initializeSampleData() {
+  private async initializeCounters() {
+    // Initialize ID counters if they don't exist
+    const userCount = await this.db.get("userIdCounter");
+    if (!userCount) await this.db.set("userIdCounter", 1);
+    else this.currentUserId = userCount;
+
+    const matchCount = await this.db.get("matchIdCounter");
+    if (!matchCount) await this.db.set("matchIdCounter", 1);
+    else this.currentMatchId = matchCount;
+
+    const rsvpCount = await this.db.get("rsvpIdCounter");
+    if (!rsvpCount) await this.db.set("rsvpIdCounter", 1);
+    else this.currentRsvpId = rsvpCount;
+
+    const notificationCount = await this.db.get("notificationIdCounter");
+    if (!notificationCount) await this.db.set("notificationIdCounter", 1);
+    else this.currentNotificationId = notificationCount;
+  }
+
+  private async initializeSampleData() {
+    // Check if sample data already exists
+    const existingUsers = await this.db.get("users");
+    if (existingUsers && Object.keys(existingUsers).length > 0) {
+      return; // Sample data already exists
+    }
+
     const sampleUsers: InsertUser[] = [
       { username: "john.doe", password: "password", name: "John Doe", department: "Engineering", avatar: "JD" },
       { username: "alex.martinez", password: "password", name: "Alex Martinez", department: "Engineering", avatar: "AM" },
@@ -90,15 +65,14 @@ export class MemStorage implements IStorage {
       { username: "kate.parker", password: "password", name: "Kate Parker", department: "Marketing", avatar: "KP" },
     ];
 
-    sampleUsers.forEach(user => {
-      this.createUser(user);
-    });
+    for (const user of sampleUsers) {
+      await this.createUser(user);
+    }
 
-    // Create fixed time slots for today and the next few days
-    this.createFixedTimeSlots();
+    await this.createFixedTimeSlots();
   }
 
-  private createFixedTimeSlots() {
+  private async createFixedTimeSlots() {
     const today = new Date();
     const timeSlots = ["morning", "lunch", "afterwork"];
     
@@ -110,83 +84,87 @@ export class MemStorage implements IStorage {
       // Skip weekends
       if (date.getDay() === 0 || date.getDay() === 6) continue;
       
-      timeSlots.forEach(slot => {
-        this.createMatch({
+      for (const slot of timeSlots) {
+        await this.createMatch({
           date: date,
           timeSlot: slot,
           maxPlayers: 4,
           status: "open"
         });
-      });
+      }
     }
     
-    // Add some sample RSVPs to show the interface in action
-    this.addSampleRSVPs();
+    await this.addSampleRSVPs();
   }
 
-  private addSampleRSVPs() {
-    // Get some matches to add RSVPs to
-    const matches = Array.from(this.matches.values());
+  private async addSampleRSVPs() {
+    const matches = await this.getAllMatches();
     
-    // Add RSVPs to a few matches to show different states
     if (matches.length > 0) {
       // Join first lunch match with 2 players
       const lunchMatch = matches.find(m => m.timeSlot === "lunch");
       if (lunchMatch) {
-        this.createRsvp({ matchId: lunchMatch.id, userId: 1, status: "confirmed" });
-        this.createRsvp({ matchId: lunchMatch.id, userId: 2, status: "confirmed" });
+        await this.createRsvp({ matchId: lunchMatch.id, userId: 1, status: "confirmed" });
+        await this.createRsvp({ matchId: lunchMatch.id, userId: 2, status: "confirmed" });
       }
       
       // Join first morning match with 3 players (almost full)
       const morningMatch = matches.find(m => m.timeSlot === "morning");
       if (morningMatch) {
-        this.createRsvp({ matchId: morningMatch.id, userId: 3, status: "confirmed" });
-        this.createRsvp({ matchId: morningMatch.id, userId: 4, status: "confirmed" });
-        this.createRsvp({ matchId: morningMatch.id, userId: 5, status: "confirmed" });
+        await this.createRsvp({ matchId: morningMatch.id, userId: 3, status: "confirmed" });
+        await this.createRsvp({ matchId: morningMatch.id, userId: 4, status: "confirmed" });
+        await this.createRsvp({ matchId: morningMatch.id, userId: 5, status: "confirmed" });
       }
       
       // Fill one afterwork match completely
       const afterworkMatch = matches.find(m => m.timeSlot === "afterwork");
       if (afterworkMatch) {
-        this.createRsvp({ matchId: afterworkMatch.id, userId: 6, status: "confirmed" });
-        this.createRsvp({ matchId: afterworkMatch.id, userId: 7, status: "confirmed" });
-        this.createRsvp({ matchId: afterworkMatch.id, userId: 8, status: "confirmed" });
-        this.createRsvp({ matchId: afterworkMatch.id, userId: 9, status: "confirmed" });
-        this.updateMatch(afterworkMatch.id, { status: "full" });
+        await this.createRsvp({ matchId: afterworkMatch.id, userId: 6, status: "confirmed" });
+        await this.createRsvp({ matchId: afterworkMatch.id, userId: 7, status: "confirmed" });
+        await this.createRsvp({ matchId: afterworkMatch.id, userId: 8, status: "confirmed" });
+        await this.createRsvp({ matchId: afterworkMatch.id, userId: 9, status: "confirmed" });
+        await this.updateMatch(afterworkMatch.id, { status: "full" });
       }
     }
   }
 
   // User operations
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const users = await this.db.get("users") || {};
+    return users[id];
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.username === username);
+    const users = await this.db.get("users") || {};
+    return Object.values(users).find((user: any) => user.username === username);
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentUserId++;
+    await this.db.set("userIdCounter", this.currentUserId);
+    
     const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    
+    const users = await this.db.get("users") || {};
+    users[id] = user;
+    await this.db.set("users", users);
+    
     return user;
   }
 
   async getOrCreateUserByName(name: string): Promise<User> {
-    // Check if user already exists by name
-    const existingUser = Array.from(this.users.values()).find(user => user.name === name);
+    const users = await this.db.get("users") || {};
+    const existingUser = Object.values(users).find((user: any) => user.name === name);
     if (existingUser) {
-      return existingUser;
+      return existingUser as User;
     }
     
-    // Create new user
     const initials = name.split(' ').map(n => n.charAt(0).toUpperCase()).join('').slice(0, 2);
     const username = name.toLowerCase().replace(/\s+/g, '.');
     
     return this.createUser({
       username,
-      password: 'temp', // Not used for our simple auth
+      password: 'temp',
       name,
       department: 'Team',
       avatar: initials
@@ -194,16 +172,24 @@ export class MemStorage implements IStorage {
   }
 
   async getAllUsers(): Promise<User[]> {
-    return Array.from(this.users.values());
+    const users = await this.db.get("users") || {};
+    return Object.values(users);
   }
 
   // Match operations
   async getMatch(id: number): Promise<Match | undefined> {
-    return this.matches.get(id);
+    const matches = await this.db.get("matches") || {};
+    return matches[id];
+  }
+
+  async getAllMatches(): Promise<Match[]> {
+    const matches = await this.db.get("matches") || {};
+    return Object.values(matches);
   }
 
   async getMatchesByDateRange(startDate: Date, endDate: Date): Promise<Match[]> {
-    return Array.from(this.matches.values()).filter(match => {
+    const matches = await this.getAllMatches();
+    return matches.filter(match => {
       const matchDate = new Date(match.date);
       return matchDate >= startDate && matchDate <= endDate;
     });
@@ -211,74 +197,105 @@ export class MemStorage implements IStorage {
 
   async createMatch(insertMatch: InsertMatch): Promise<Match> {
     const id = this.currentMatchId++;
+    await this.db.set("matchIdCounter", this.currentMatchId);
+    
     const match: Match = { 
       ...insertMatch, 
       id, 
       createdAt: new Date() 
     };
-    this.matches.set(id, match);
+    
+    const matches = await this.db.get("matches") || {};
+    matches[id] = match;
+    await this.db.set("matches", matches);
+    
     return match;
   }
 
   async updateMatch(id: number, updates: Partial<Match>): Promise<Match | undefined> {
-    const match = this.matches.get(id);
+    const matches = await this.db.get("matches") || {};
+    const match = matches[id];
     if (!match) return undefined;
     
     const updatedMatch = { ...match, ...updates };
-    this.matches.set(id, updatedMatch);
+    matches[id] = updatedMatch;
+    await this.db.set("matches", matches);
+    
     return updatedMatch;
   }
 
   async deleteMatch(id: number): Promise<boolean> {
-    return this.matches.delete(id);
+    const matches = await this.db.get("matches") || {};
+    if (!matches[id]) return false;
+    
+    delete matches[id];
+    await this.db.set("matches", matches);
+    return true;
   }
 
   // RSVP operations
   async getRsvpsByMatch(matchId: number): Promise<Rsvp[]> {
-    return Array.from(this.rsvps.values()).filter(rsvp => rsvp.matchId === matchId);
+    const rsvps = await this.db.get("rsvps") || {};
+    return Object.values(rsvps).filter((rsvp: any) => rsvp.matchId === matchId);
   }
 
   async getRsvpsByUser(userId: number): Promise<Rsvp[]> {
-    return Array.from(this.rsvps.values()).filter(rsvp => rsvp.userId === userId);
+    const rsvps = await this.db.get("rsvps") || {};
+    return Object.values(rsvps).filter((rsvp: any) => rsvp.userId === userId);
   }
 
   async createRsvp(insertRsvp: InsertRsvp): Promise<Rsvp> {
     const id = this.currentRsvpId++;
+    await this.db.set("rsvpIdCounter", this.currentRsvpId);
+    
     const rsvp: Rsvp = { 
       ...insertRsvp, 
       id, 
       joinedAt: new Date() 
     };
-    this.rsvps.set(id, rsvp);
+    
+    const rsvps = await this.db.get("rsvps") || {};
+    rsvps[id] = rsvp;
+    await this.db.set("rsvps", rsvps);
+    
     return rsvp;
   }
 
   async deleteRsvp(matchId: number, userId: number): Promise<boolean> {
-    const rsvp = Array.from(this.rsvps.values()).find(r => r.matchId === matchId && r.userId === userId);
-    if (!rsvp) return false;
-    return this.rsvps.delete(rsvp.id);
+    const rsvps = await this.db.get("rsvps") || {};
+    const rsvpToDelete = Object.values(rsvps).find((r: any) => r.matchId === matchId && r.userId === userId);
+    if (!rsvpToDelete) return false;
+    
+    delete rsvps[(rsvpToDelete as any).id];
+    await this.db.set("rsvps", rsvps);
+    return true;
   }
 
   async getRsvpCount(matchId: number): Promise<number> {
-    return Array.from(this.rsvps.values()).filter(rsvp => rsvp.matchId === matchId && rsvp.status !== "cancelled").length;
+    const rsvps = await this.getRsvpsByMatch(matchId);
+    return rsvps.filter(rsvp => rsvp.status !== "cancelled").length;
   }
 
   async getConfirmedRsvpCount(matchId: number): Promise<number> {
-    return Array.from(this.rsvps.values()).filter(rsvp => rsvp.matchId === matchId && rsvp.status === "confirmed").length;
+    const rsvps = await this.getRsvpsByMatch(matchId);
+    return rsvps.filter(rsvp => rsvp.status === "confirmed").length;
   }
 
   async getWaitlistedRsvps(matchId: number): Promise<Rsvp[]> {
-    return Array.from(this.rsvps.values()).filter(rsvp => rsvp.matchId === matchId && rsvp.status === "waitlisted");
+    const rsvps = await this.getRsvpsByMatch(matchId);
+    return rsvps.filter(rsvp => rsvp.status === "waitlisted");
   }
 
   async promoteFromWaitlist(matchId: number): Promise<Rsvp | null> {
     const waitlisted = await this.getWaitlistedRsvps(matchId);
     if (waitlisted.length === 0) return null;
     
-    // Get the first waitlisted person (first come, first served)
     const toPromote = waitlisted.sort((a, b) => a.joinedAt.getTime() - b.joinedAt.getTime())[0];
     toPromote.status = "confirmed";
-    this.rsvps.set(toPromote.id, toPromote);
+    
+    const rsvps = await this.db.get("rsvps") || {};
+    rsvps[toPromote.id] = toPromote;
+    await this.db.set("rsvps", rsvps);
     
     return toPromote;
   }
@@ -286,24 +303,32 @@ export class MemStorage implements IStorage {
   // Notification operations
   async createNotification(insertNotification: InsertNotification): Promise<Notification> {
     const id = this.currentNotificationId++;
+    await this.db.set("notificationIdCounter", this.currentNotificationId);
+    
     const notification: Notification = { 
       ...insertNotification, 
       id, 
       createdAt: new Date() 
     };
-    this.notifications.set(id, notification);
+    
+    const notifications = await this.db.get("notifications") || {};
+    notifications[id] = notification;
+    await this.db.set("notifications", notifications);
+    
     return notification;
   }
 
   async getNotificationsByUser(userId: number): Promise<Notification[]> {
-    return Array.from(this.notifications.values()).filter(notification => notification.userId === userId);
+    const notifications = await this.db.get("notifications") || {};
+    return Object.values(notifications).filter((notification: any) => notification.userId === userId);
   }
 
   async markNotificationSent(id: number): Promise<void> {
-    const notification = this.notifications.get(id);
+    const notifications = await this.db.get("notifications") || {};
+    const notification = notifications[id];
     if (notification) {
       notification.sent = true;
-      this.notifications.set(id, notification);
+      await this.db.set("notifications", notifications);
     }
   }
 
@@ -336,7 +361,3 @@ export class MemStorage implements IStorage {
     return result.sort((a, b) => b.gameCount - a.gameCount);
   }
 }
-
-import { ReplitStorage } from "./replit-storage";
-
-export const storage = new ReplitStorage();
