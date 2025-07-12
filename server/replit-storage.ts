@@ -18,15 +18,24 @@ export class ReplitStorage implements IStorage {
   private currentMatchId: number = 1;
   private currentRsvpId: number = 1;
   private currentNotificationId: number = 1;
+  private initialized: boolean = false;
+  private initPromise: Promise<void>;
 
   constructor() {
     this.db = new Database();
-    this.initialize();
+    this.initPromise = this.initialize();
   }
 
   private async initialize() {
     await this.initializeCounters();
     await this.initializeSampleData();
+    this.initialized = true;
+  }
+
+  private async ensureInitialized() {
+    if (!this.initialized) {
+      await this.initPromise;
+    }
   }
 
   private async initializeCounters() {
@@ -160,6 +169,8 @@ export class ReplitStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
+    await this.ensureInitialized();
+    
     const id = this.currentUserId++;
     await this.db.set("userIdCounter", this.currentUserId);
     
@@ -216,10 +227,7 @@ export class ReplitStorage implements IStorage {
   }
 
   async createMatch(insertMatch: InsertMatch): Promise<Match> {
-    // Ensure currentMatchId is properly initialized
-    if (!this.currentMatchId || this.currentMatchId === 0) {
-      this.currentMatchId = 1;
-    }
+    await this.ensureInitialized();
     
     const id = this.currentMatchId++;
     await this.db.set("matchIdCounter", this.currentMatchId);
@@ -270,6 +278,8 @@ export class ReplitStorage implements IStorage {
   }
 
   async createRsvp(insertRsvp: InsertRsvp): Promise<Rsvp> {
+    await this.ensureInitialized();
+    
     const id = this.currentRsvpId++;
     await this.db.set("rsvpIdCounter", this.currentRsvpId);
     
@@ -327,6 +337,8 @@ export class ReplitStorage implements IStorage {
 
   // Notification operations
   async createNotification(insertNotification: InsertNotification): Promise<Notification> {
+    await this.ensureInitialized();
+    
     const id = this.currentNotificationId++;
     await this.db.set("notificationIdCounter", this.currentNotificationId);
     
