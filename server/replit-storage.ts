@@ -21,8 +21,12 @@ export class ReplitStorage implements IStorage {
 
   constructor() {
     this.db = new Database();
-    this.initializeCounters();
-    this.initializeSampleData();
+    this.initialize();
+  }
+
+  private async initialize() {
+    await this.initializeCounters();
+    await this.initializeSampleData();
   }
 
   private async initializeCounters() {
