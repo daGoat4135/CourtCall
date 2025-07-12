@@ -78,8 +78,10 @@ export default function TimeSlotCard({
         throw new Error("No user available");
       }
       
+      let matchToJoin = match;
+      
       // First create the match if it doesn't exist
-      if (!match) {
+      if (!matchToJoin) {
         const createResponse = await fetch("/api/matches", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -95,36 +97,22 @@ export default function TimeSlotCard({
           throw new Error("Failed to create match");
         }
         
-        const newMatch = await createResponse.json();
-        
-        // Then join the new match
-        const joinResponse = await fetch(`/api/matches/${newMatch.id}/join`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userName: currentUser.name }),
-        });
-        
-        if (!joinResponse.ok) {
-          const error = await joinResponse.json();
-          throw new Error(error.error || "Failed to join match");
-        }
-        
-        return { newMatch, rsvp: await joinResponse.json() };
-      } else {
-        // Just join existing match
-        const response = await fetch(`/api/matches/${match.id}/join`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userName: currentUser.name }),
-        });
-        
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Failed to join match");
-        }
-        
-        return { rsvp: await response.json() };
+        matchToJoin = await createResponse.json();
       }
+      
+      // Join the match (either existing or newly created)
+      const joinResponse = await fetch(`/api/matches/${matchToJoin.id}/join`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userName: currentUser.name }),
+      });
+      
+      if (!joinResponse.ok) {
+        const error = await joinResponse.json();
+        throw new Error(error.error || "Failed to join match");
+      }
+      
+      return await joinResponse.json();
     },
     onSuccess: () => {
       toast({
