@@ -78,10 +78,11 @@ export default function TimeSlotCard({
         throw new Error("No user available");
       }
       
-      let matchId: number;
+      let targetMatchId: number;
       
       // First create the match if it doesn't exist
       if (!match) {
+        console.log("Creating new match...");
         const createResponse = await fetch("/api/matches", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -98,13 +99,17 @@ export default function TimeSlotCard({
         }
         
         const newMatch = await createResponse.json();
-        matchId = newMatch.id;
+        console.log("Created match:", newMatch);
+        targetMatchId = newMatch.id;
       } else {
-        matchId = match.id;
+        console.log("Using existing match:", match.id);
+        targetMatchId = match.id;
       }
       
+      console.log("Joining match with ID:", targetMatchId);
+      
       // Join the match (either existing or newly created)
-      const joinResponse = await fetch(`/api/matches/${matchId}/join`, {
+      const joinResponse = await fetch(`/api/matches/${targetMatchId}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userName: currentUser.name }),
