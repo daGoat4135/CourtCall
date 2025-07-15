@@ -391,6 +391,7 @@ export class ReplitStorage implements IStorage {
     const matchesInRange = await this.getMatchesByDateRange(startDate, endDate);
     const userStats = new Map<number, number>();
 
+    // Get all RSVPs for matches in range
     for (const match of matchesInRange) {
       const rsvps = await this.getRsvpsByMatch(match.id);
       for (const rsvp of rsvps) {
@@ -400,6 +401,7 @@ export class ReplitStorage implements IStorage {
       }
     }
 
+    // Build result array with user data
     const result = [];
     for (const [userId, gameCount] of userStats) {
       const user = await this.getUser(userId);

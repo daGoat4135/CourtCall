@@ -45,7 +45,7 @@ export default function Dashboard() {
       if (!response.ok) throw new Error("Failed to fetch leaderboard");
       return response.json();
     },
-    enabled: !!currentUser, // Only run query when user exists
+    // Remove user requirement - leaderboard should show all players
   });
 
   const { data: userStats } = useQuery({
