@@ -338,5 +338,9 @@ export class MemStorage implements IStorage {
 }
 
 import { ReplitStorage } from "./replit-storage";
+import { DatabaseStorage } from "./db-storage";
 
-export const storage = new ReplitStorage();
+// Use database storage if DATABASE_URL is available, otherwise fallback to in-memory
+export const storage = process.env.DATABASE_URL 
+  ? new DatabaseStorage()
+  : new ReplitStorage();
