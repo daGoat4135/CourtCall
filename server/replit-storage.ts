@@ -59,18 +59,17 @@ export class ReplitStorage implements IStorage {
       this.currentNotificationId = this.db.notificationIdCounter;
     }
 
-    // Initialize with sample data if empty (but don't await, do it in background)
-    const users = this.db.users || {};
-    if (Object.keys(users).length === 0) {
-      // Don't await here to avoid circular dependency
-      this.initializeSampleDataAsync();
+    // Initialize with time slots only (no sample data)
+    const matches = this.db.matches || {};
+    if (Object.keys(matches).length === 0) {
+      this.createFixedTimeSlotsAsync();
     }
   }
 
-  private async initializeSampleDataAsync() {
+  private async createFixedTimeSlotsAsync() {
     // Run initialization in background
     setTimeout(async () => {
-      await this.initializeSampleData();
+      await this.createFixedTimeSlots();
     }, 0);
   }
 
