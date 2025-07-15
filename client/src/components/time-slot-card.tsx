@@ -56,7 +56,7 @@ export default function TimeSlotCard({
   const rsvps = match?.rsvps || [];
   const confirmedRsvps = rsvps.filter(rsvp => rsvp.status === "confirmed");
   const waitlistedRsvps = rsvps.filter(rsvp => rsvp.status === "waitlisted");
-  const currentPlayerRsvp = rsvps.find(rsvp => currentUser && rsvp.user.name === currentUser.name);
+  const currentPlayerRsvp = rsvps.find(rsvp => currentUser && rsvp.user && rsvp.user.name === currentUser.name);
   const isUserJoined = !!currentPlayerRsvp;
   const playerCount = confirmedRsvps.length;
   const maxPlayers = match?.maxPlayers || 4;
@@ -206,7 +206,7 @@ export default function TimeSlotCard({
           {/* Confirmed players */}
           <div className="flex -space-x-1">
             {confirmedRsvps.slice(0, 3).map((rsvp) => (
-              rsvp.user ? (
+              rsvp.user && rsvp.user.avatar ? (
                 <div key={rsvp.userId} className="player-avatar w-6 h-6 text-xs">
                   {rsvp.user.avatar}
                 </div>
@@ -223,7 +223,7 @@ export default function TimeSlotCard({
           {waitlistedRsvps.length > 0 && (
             <div className="flex -space-x-1">
               {waitlistedRsvps.slice(0, 3).map((rsvp) => (
-                rsvp.user ? (
+                rsvp.user && rsvp.user.avatar ? (
                   <div key={rsvp.userId} className="waitlist-avatar w-6 h-6 text-xs">
                     {rsvp.user.avatar}
                   </div>
