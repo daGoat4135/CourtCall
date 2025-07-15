@@ -93,7 +93,9 @@ export default function Dashboard() {
   };
 
   const weeklyStats = {
-    gamesThisWeek: matches.length,
+    gamesThisWeek: matches.filter(match => 
+      match.rsvps?.some(rsvp => rsvp.status === 'confirmed')
+    ).length,
     activePlayers: new Set(matches.flatMap(m => m.rsvps?.map(r => r.userId) || [])).size,
   };
 
