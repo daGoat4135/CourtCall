@@ -30,6 +30,15 @@ export class ReplitStorage implements IStorage {
   }
 
   private initializeIfNeeded() {
+    // Clear old sample data completely
+    if (!this.db.initialized) {
+      this.db.users = {};
+      this.db.matches = {};
+      this.db.rsvps = {};
+      this.db.notifications = {};
+      this.db.initialized = true;
+    }
+
     // Initialize counters if they don't exist
     if (!this.db.userIdCounter) {
       this.db.userIdCounter = 1;
@@ -73,28 +82,6 @@ export class ReplitStorage implements IStorage {
     }, 0);
   }
 
-  private async initializeSampleData() {
-    const sampleUsers: InsertUser[] = [
-      { username: "john.doe", password: "password", name: "John Doe", department: "Engineering", avatar: "JD" },
-      { username: "alex.martinez", password: "password", name: "Alex Martinez", department: "Engineering", avatar: "AM" },
-      { username: "sarah.kim", password: "password", name: "Sarah Kim", department: "Design", avatar: "SK" },
-      { username: "jordan.lee", password: "password", name: "Jordan Lee", department: "Marketing", avatar: "JL" },
-      { username: "mike.rodriguez", password: "password", name: "Mike Rodriguez", department: "Sales", avatar: "MR" },
-      { username: "diana.kim", password: "password", name: "Diana Kim", department: "Product", avatar: "DK" },
-      { username: "lisa.martinez", password: "password", name: "Lisa Martinez", department: "HR", avatar: "LM" },
-      { username: "tom.riley", password: "password", name: "Tom Riley", department: "Engineering", avatar: "TR" },
-      { username: "rachel.wong", password: "password", name: "Rachel Wong", department: "Design", avatar: "RW" },
-      { username: "james.smith", password: "password", name: "James Smith", department: "Engineering", avatar: "JS" },
-      { username: "kate.parker", password: "password", name: "Kate Parker", department: "Marketing", avatar: "KP" },
-    ];
-
-    for (const user of sampleUsers) {
-      await this.createUser(user);
-    }
-
-    await this.createFixedTimeSlots();
-  }
-
   private async createFixedTimeSlots() {
     const today = new Date();
     const timeSlots = ["morning", "lunch", "afterwork"];
@@ -117,42 +104,7 @@ export class ReplitStorage implements IStorage {
       }
     }
     
-    // Add some sample RSVPs to show the interface in action
-    await this.addSampleRSVPs();
-  }
-
-  private async addSampleRSVPs() {
-    // Get some matches to add RSVPs to
-    const matches = this.db.matches || {};
-    const matchList = Object.values(matches) as Match[];
-    
-    // Add RSVPs to a few matches to show different states
-    if (matchList.length > 0) {
-      // Join first lunch match with 2 players
-      const lunchMatch = matchList.find(m => m.timeSlot === "lunch");
-      if (lunchMatch) {
-        await this.createRsvp({ matchId: lunchMatch.id, userId: 1, status: "confirmed" });
-        await this.createRsvp({ matchId: lunchMatch.id, userId: 2, status: "confirmed" });
-      }
-      
-      // Join first morning match with 3 players (almost full)
-      const morningMatch = matchList.find(m => m.timeSlot === "morning");
-      if (morningMatch) {
-        await this.createRsvp({ matchId: morningMatch.id, userId: 3, status: "confirmed" });
-        await this.createRsvp({ matchId: morningMatch.id, userId: 4, status: "confirmed" });
-        await this.createRsvp({ matchId: morningMatch.id, userId: 5, status: "confirmed" });
-      }
-      
-      // Fill one afterwork match completely
-      const afterworkMatch = matchList.find(m => m.timeSlot === "afterwork");
-      if (afterworkMatch) {
-        await this.createRsvp({ matchId: afterworkMatch.id, userId: 6, status: "confirmed" });
-        await this.createRsvp({ matchId: afterworkMatch.id, userId: 7, status: "confirmed" });
-        await this.createRsvp({ matchId: afterworkMatch.id, userId: 8, status: "confirmed" });
-        await this.createRsvp({ matchId: afterworkMatch.id, userId: 9, status: "confirmed" });
-        await this.updateMatch(afterworkMatch.id, { status: "full" });
-      }
-    }
+    // No sample RSVPs - leaderboard will populate from real signups
   }
 
   // User operations
