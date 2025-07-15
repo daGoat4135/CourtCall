@@ -157,8 +157,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (period === "week") {
         startDate = startOfWeek(endDate, { weekStartsOn: 1 });
       } else {
-        // Default to current month
-        startDate = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+        // Default to last 30 days to capture more activity
+        startDate = new Date(endDate);
+        startDate.setDate(endDate.getDate() - 30);
       }
       
       console.log("Leaderboard query:", { startDate, endDate, period });

@@ -388,21 +388,30 @@ export class ReplitStorage implements IStorage {
     user: User;
     gameCount: number;
   }>> {
+    console.log("getPlayerStats called with:", { startDate, endDate });
+    
     const matchesInRange = await this.getMatchesByDateRange(startDate, endDate);
+    console.log("Matches in range:", matchesInRange.length);
+    
     const userStats = new Map<number, number>();
 
     // Get all RSVPs for matches in range
     const rsvps = this.db.rsvps || {};
     const allRsvps = Object.values(rsvps) as Rsvp[];
+    console.log("Total RSVPs in database:", allRsvps.length);
     
     for (const match of matchesInRange) {
       const matchRsvps = allRsvps.filter(rsvp => rsvp.matchId === match.id);
+      console.log(`Match ${match.id} has ${matchRsvps.length} RSVPs`);
       for (const rsvp of matchRsvps) {
         if (rsvp.status === "confirmed") {
           userStats.set(rsvp.userId, (userStats.get(rsvp.userId) || 0) + 1);
+          console.log(`User ${rsvp.userId} now has ${userStats.get(rsvp.userId)} games`);
         }
       }
     }
+
+    console.log("User stats map:", Array.from(userStats.entries()));
 
     // Build result array with user data
     const result = [];
@@ -410,9 +419,13 @@ export class ReplitStorage implements IStorage {
       const user = await this.getUser(userId);
       if (user) {
         result.push({ userId, user, gameCount });
+        console.log(`Added user ${user.name} with ${gameCount} games`);
+      } else {
+        console.log(`User ${userId} not found`);
       }
     }
 
+    console.log("Final leaderboard result:", result);
     return result.sort((a, b) => b.gameCount - a.gameCount);
   }
 }
