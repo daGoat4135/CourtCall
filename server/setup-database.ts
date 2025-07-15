@@ -119,7 +119,7 @@ async function seedSampleData(db: any) {
 }
 
 // Run setup if this file is executed directly
-if (require.main === module) {
+if (import.meta.main) {
   setupDatabase().catch(console.error);
 }
 
