@@ -392,9 +392,12 @@ export class ReplitStorage implements IStorage {
     const userStats = new Map<number, number>();
 
     // Get all RSVPs for matches in range
+    const rsvps = this.db.rsvps || {};
+    const allRsvps = Object.values(rsvps) as Rsvp[];
+    
     for (const match of matchesInRange) {
-      const rsvps = await this.getRsvpsByMatch(match.id);
-      for (const rsvp of rsvps) {
+      const matchRsvps = allRsvps.filter(rsvp => rsvp.matchId === match.id);
+      for (const rsvp of matchRsvps) {
         if (rsvp.status === "confirmed") {
           userStats.set(rsvp.userId, (userStats.get(rsvp.userId) || 0) + 1);
         }

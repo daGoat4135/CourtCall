@@ -161,7 +161,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         startDate = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
       }
       
+      console.log("Leaderboard query:", { startDate, endDate, period });
       const stats = await storage.getPlayerStats(startDate, endDate);
+      console.log("Leaderboard stats:", stats);
       res.json(stats);
     } catch (error) {
       console.error("Leaderboard error:", error);
