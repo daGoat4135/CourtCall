@@ -30,12 +30,22 @@ export class ReplitStorage implements IStorage {
   }
 
   private initializeIfNeeded() {
-    // Clear old sample data completely
-    if (!this.db.initialized) {
+    // Only initialize empty structure if nothing exists
+    if (!this.db.users) {
       this.db.users = {};
+    }
+    if (!this.db.matches) {
       this.db.matches = {};
+    }
+    if (!this.db.rsvps) {
       this.db.rsvps = {};
+    }
+    if (!this.db.notifications) {
       this.db.notifications = {};
+    }
+    
+    // Mark as initialized after first setup
+    if (!this.db.initialized) {
       this.db.initialized = true;
     }
 
