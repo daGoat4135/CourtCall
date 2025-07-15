@@ -77,9 +77,9 @@ export default function TimeSlotCard({
       if (!currentUser) {
         throw new Error("No user available");
       }
-      
+
       let targetMatchId: number;
-      
+
       // First create the match if it doesn't exist
       if (!match) {
         console.log("Creating new match...");
@@ -93,11 +93,11 @@ export default function TimeSlotCard({
             status: "open",
           }),
         });
-        
+
         if (!createResponse.ok) {
           throw new Error("Failed to create match");
         }
-        
+
         const newMatch = await createResponse.json();
         console.log("Created match:", newMatch);
         targetMatchId = newMatch.id;
@@ -105,21 +105,21 @@ export default function TimeSlotCard({
         console.log("Using existing match:", match.id);
         targetMatchId = match.id;
       }
-      
+
       console.log("Joining match with ID:", targetMatchId);
-      
+
       // Join the match (either existing or newly created)
       const joinResponse = await fetch(`/api/matches/${targetMatchId}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userName: currentUser.name }),
       });
-      
+
       if (!joinResponse.ok) {
         const error = await joinResponse.json();
         throw new Error(error.error || "Failed to join match");
       }
-      
+
       return await joinResponse.json();
     },
     onSuccess: () => {
@@ -145,11 +145,11 @@ export default function TimeSlotCard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userName: currentUser.name }),
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to leave match");
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -188,7 +188,7 @@ export default function TimeSlotCard({
           <span className="text-sm font-medium">{label}</span>
         </div>
       </div>
-      
+
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-1">
           <Users className="h-3 w-3 text-gray-500" />
@@ -200,15 +200,17 @@ export default function TimeSlotCard({
           </Badge>
         )}
       </div>
-      
+
       {playerCount > 0 && (
         <div className="mb-3 space-y-2">
           {/* Confirmed players */}
           <div className="flex -space-x-1">
             {confirmedRsvps.slice(0, 3).map((rsvp) => (
-              <div key={rsvp.userId} className="player-avatar w-6 h-6 text-xs">
-                {rsvp.user.avatar}
-              </div>
+              rsvp.user ? (
+                <div key={rsvp.userId} className="player-avatar w-6 h-6 text-xs">
+                  {rsvp.user.avatar}
+                </div>
+              ) : null
             ))}
             {playerCount > 3 && (
               <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-medium">
@@ -216,14 +218,16 @@ export default function TimeSlotCard({
               </div>
             )}
           </div>
-          
+
           {/* Waitlisted players */}
           {waitlistedRsvps.length > 0 && (
             <div className="flex -space-x-1">
               {waitlistedRsvps.slice(0, 3).map((rsvp) => (
-                <div key={rsvp.userId} className="waitlist-avatar w-6 h-6 text-xs">
-                  {rsvp.user.avatar}
-                </div>
+                rsvp.user ? (
+                  <div key={rsvp.userId} className="waitlist-avatar w-6 h-6 text-xs">
+                    {rsvp.user.avatar}
+                  </div>
+                ) : null
               ))}
               {waitlistedRsvps.length > 3 && (
                 <div className="w-6 h-6 bg-gray-100 border-2 border-dashed border-gray-300 rounded-full flex items-center justify-center text-xs font-medium text-gray-500">
@@ -234,7 +238,7 @@ export default function TimeSlotCard({
           )}
         </div>
       )}
-      
+
       {!currentUser ? (
         showNameInput ? (
           <div className="flex space-x-2">
