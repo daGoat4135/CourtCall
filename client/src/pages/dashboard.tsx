@@ -108,9 +108,17 @@ export default function Dashboard() {
     setCurrentUser(null);
   };
 
+  const handleTeamUpdate = (team: string) => {
+    if (currentUser) {
+      const updatedUser = { ...currentUser, department: team };
+      localStorage.setItem('courtcall-user', JSON.stringify(updatedUser));
+      setCurrentUser(updatedUser);
+    }
+  };
+
   return (
     <div className="bg-gray-50 min-h-screen">
-      <Header currentUser={currentUser} onChangeUser={handleChangeUser} />
+      <Header currentUser={currentUser} onChangeUser={handleChangeUser} onTeamUpdate={handleTeamUpdate} />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

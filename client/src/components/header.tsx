@@ -1,19 +1,31 @@
-import { Bell, Volleyball, User } from "lucide-react";
+import { Bell, Volleyball, User, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import TeamSelectorDialog from "./team-selector-dialog";
 
 interface HeaderProps {
   currentUser: {
     id: number;
     name: string;
     avatar: string;
+    department?: string;
   } | null;
   onChangeUser?: () => void;
+  onTeamUpdate?: (team: string) => void;
 }
 
-export default function Header({ currentUser, onChangeUser }: HeaderProps) {
+export default function Header({ currentUser, onChangeUser, onTeamUpdate }: HeaderProps) {
+  const [showTeamDialog, setShowTeamDialog] = useState(false);
+
   const handleUserClick = () => {
     if (onChangeUser) {
       onChangeUser();
+    }
+  };
+
+  const handleTeamUpdate = (team: string) => {
+    if (onTeamUpdate) {
+      onTeamUpdate(team);
     }
   };
 
@@ -37,8 +49,13 @@ export default function Header({ currentUser, onChangeUser }: HeaderProps) {
                 <Button variant="ghost" size="sm" className="p-2">
                   <Bell className="h-4 w-4 text-gray-500" />
                 </Button>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-gray-700">Hi, {currentUser.name}!</span>
+                <div className="flex items-center space-x-2 relative">
+                  <div className="flex flex-col items-end">
+                    <span className="text-sm font-medium text-gray-700">Hi, {currentUser.name}!</span>
+                    {currentUser.department && (
+                      <span className="text-xs text-gray-500">{currentUser.department}</span>
+                    )}
+                  </div>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -46,6 +63,17 @@ export default function Header({ currentUser, onChangeUser }: HeaderProps) {
                     className="player-avatar hover:ring-2 hover:ring-court-blue cursor-pointer"
                   >
                     {currentUser.avatar}
+                  </Button>
+                  
+                  {/* Fun floating action button */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowTeamDialog(true)}
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-court-blue hover:bg-blue-700 text-white rounded-full p-0 shadow-lg transition-all duration-200 hover:scale-110"
+                    title="Tell us what team you're on!"
+                  >
+                    <Users className="h-3 w-3" />
                   </Button>
                 </div>
               </>
@@ -58,6 +86,14 @@ export default function Header({ currentUser, onChangeUser }: HeaderProps) {
           </div>
         </div>
       </div>
+      
+      {/* Team Selector Dialog */}
+      <TeamSelectorDialog
+        open={showTeamDialog}
+        onOpenChange={setShowTeamDialog}
+        currentTeam={currentUser?.department}
+        onTeamUpdate={handleTeamUpdate}
+      />
     </header>
   );
 }
