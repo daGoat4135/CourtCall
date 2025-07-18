@@ -190,7 +190,7 @@ export default function TimeSlotCard({
   };
 
   return (
-    <TooltipProvider delayDuration={50}>
+    <TooltipProvider delayDuration={0}>
       <div className={`p-3 rounded-lg border-2 transition-all duration-200 hover:shadow-md ${color} ${getBorderColor()}`}>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center space-x-2">
