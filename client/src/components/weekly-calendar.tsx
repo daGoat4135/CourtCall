@@ -9,11 +9,11 @@ import { isSameDay } from "date-fns";
 interface WeeklyCalendarProps {
   matches: any[];
   currentWeek: Date;
-  currentUser: { id: number; name: string; avatar: string } | null;
+  currentUser: { id: number; name: string; avatar: string; department?: string } | null;
   isLoading: boolean;
   onNavigateWeek: (direction: "prev" | "next") => void;
   onMatchUpdate: () => void;
-  onNameSubmit?: (name: string) => void;
+  onNameSubmit?: (name: string, department: string) => void;
 }
 
 export default function WeeklyCalendar({ 

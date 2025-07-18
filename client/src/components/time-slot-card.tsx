@@ -29,6 +29,7 @@ interface TimeSlotCardProps {
     id: number;
     name: string;
     avatar: string;
+    department?: string;
   } | null;
   onNameSubmit?: (name: string) => void;
   onMatchUpdate: () => void;
@@ -112,7 +113,7 @@ export default function TimeSlotCard({
       const joinResponse = await fetch(`/api/matches/${targetMatchId}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userName: currentUser.name }),
+        body: JSON.stringify({ userName: currentUser.name, department: currentUser.department }),
       });
 
       if (!joinResponse.ok) {
@@ -143,7 +144,7 @@ export default function TimeSlotCard({
       const response = await fetch(`/api/matches/${match!.id}/leave`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userName: currentUser.name }),
+        body: JSON.stringify({ userName: currentUser.name, department: currentUser.department }),
       });
 
       if (!response.ok) {

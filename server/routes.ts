@@ -56,7 +56,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/matches/:matchId/join", async (req, res) => {
     try {
       const matchId = parseInt(req.params.matchId);
-      const { userId, userName } = req.body;
+      const { userId, userName, department } = req.body;
       
       // Check if match exists
       const match = await storage.getMatch(matchId);
@@ -68,7 +68,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If userName is provided instead of userId, create or find the user
       if (userName && !userId) {
-        const user = await storage.getOrCreateUserByName(userName);
+        const user = await storage.getOrCreateUserByName(userName, department);
         actualUserId = user.id;
       } else if (userId) {
         // Check if user exists in backend, if not this is a frontend-only user
@@ -78,7 +78,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (!userName) {
             return res.status(400).json({ error: "User not found in database. Please provide userName." });
           }
-          const user = await storage.getOrCreateUserByName(userName);
+          const user = await storage.getOrCreateUserByName(userName, department);
           actualUserId = user.id;
         }
       }

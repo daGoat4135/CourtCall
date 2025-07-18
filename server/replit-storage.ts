@@ -147,7 +147,7 @@ export class ReplitStorage implements IStorage {
     return user;
   }
 
-  async getOrCreateUserByName(name: string): Promise<User> {
+  async getOrCreateUserByName(name: string, department: string = 'Team'): Promise<User> {
     // Check if user already exists by name
     const users = this.db.users || {};
     const existingUser = Object.values(users).find((user: any) => user.name === name);
@@ -163,7 +163,7 @@ export class ReplitStorage implements IStorage {
       username,
       password: 'temp', // Not used for our simple auth
       name,
-      department: 'Team',
+      department,
       avatar: initials
     });
   }

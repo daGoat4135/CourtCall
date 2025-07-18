@@ -11,7 +11,7 @@ import { formatWeekRange } from "@/lib/date-utils";
 
 export default function Dashboard() {
   const [currentWeek, setCurrentWeek] = useState(new Date());
-  const [currentUser, setCurrentUser] = useState<{ id: number; name: string; avatar: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ id: number; name: string; avatar: string; department?: string } | null>(null);
   const queryClient = useQueryClient();
 
 
@@ -69,12 +69,13 @@ export default function Dashboard() {
     enabled: !!currentUser, // Only run query when user exists
   });
 
-  const handleNameSubmit = (name: string) => {
+  const handleNameSubmit = (name: string, department: string) => {
     const initials = name.split(' ').map(n => n.charAt(0).toUpperCase()).join('').slice(0, 2);
     const user = {
       id: Date.now(), // Simple ID generation
       name: name,
-      avatar: initials
+      avatar: initials,
+      department: department
     };
     
     localStorage.setItem('courtcall-user', JSON.stringify(user));

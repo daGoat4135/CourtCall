@@ -19,17 +19,25 @@ import {
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Volleyball } from "lucide-react";
 
 const nameSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(50, "Name must be less than 50 characters"),
+  department: z.string().min(1, "Please select a team"),
 });
 
 type NameForm = z.infer<typeof nameSchema>;
 
 interface NameInputDialogProps {
   open: boolean;
-  onNameSubmit: (name: string) => void;
+  onNameSubmit: (name: string, department: string) => void;
 }
 
 export default function NameInputDialog({ open, onNameSubmit }: NameInputDialogProps) {
@@ -37,11 +45,12 @@ export default function NameInputDialog({ open, onNameSubmit }: NameInputDialogP
     resolver: zodResolver(nameSchema),
     defaultValues: {
       name: "",
+      department: "",
     },
   });
 
   const onSubmit = (data: NameForm) => {
-    onNameSubmit(data.name);
+    onNameSubmit(data.name, data.department);
   };
 
   return (
@@ -74,6 +83,35 @@ export default function NameInputDialog({ open, onNameSubmit }: NameInputDialogP
                       autoFocus
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="department"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Your Team</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your team" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Engineering">Engineering</SelectItem>
+                      <SelectItem value="Product">Product</SelectItem>
+                      <SelectItem value="Design">Design</SelectItem>
+                      <SelectItem value="Marketing">Marketing</SelectItem>
+                      <SelectItem value="Sales">Sales</SelectItem>
+                      <SelectItem value="Operations">Operations</SelectItem>
+                      <SelectItem value="HR">HR</SelectItem>
+                      <SelectItem value="Finance">Finance</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

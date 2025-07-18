@@ -27,6 +27,7 @@ interface MatchCardProps {
     id: number;
     name: string;
     avatar: string;
+    department?: string;
   };
   onMatchUpdate: () => void;
 }
@@ -46,7 +47,7 @@ export default function MatchCard({ match, currentUser, onMatchUpdate }: MatchCa
       const response = await fetch(`/api/matches/${match.id}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: currentUser.id, userName: currentUser.name }),
+        body: JSON.stringify({ userId: currentUser.id, userName: currentUser.name, department: currentUser.department }),
       });
       if (!response.ok) {
         const error = await response.json();
@@ -75,7 +76,7 @@ export default function MatchCard({ match, currentUser, onMatchUpdate }: MatchCa
       const response = await fetch(`/api/matches/${match.id}/leave`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: currentUser.id, userName: currentUser.name }),
+        body: JSON.stringify({ userId: currentUser.id, userName: currentUser.name, department: currentUser.department }),
       });
       if (!response.ok) {
         const error = await response.json();
