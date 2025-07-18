@@ -29,7 +29,7 @@ interface MatchCardProps {
     avatar: string;
     department?: string;
   };
-  onMatchUpdate: (celebrationType?: "join" | "create", playerName?: string) => void;
+  onMatchUpdate: () => void;
 }
 
 export default function MatchCard({ match, currentUser, onMatchUpdate }: MatchCardProps) {
@@ -60,7 +60,7 @@ export default function MatchCard({ match, currentUser, onMatchUpdate }: MatchCa
         title: "Match joined!",
         description: "You've successfully joined the match.",
       });
-      onMatchUpdate("join", currentUser.name);
+      onMatchUpdate();
     },
     onError: (error) => {
       toast({
