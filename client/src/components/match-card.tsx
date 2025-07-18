@@ -1,10 +1,13 @@
 import { useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus } from "lucide-react";
-import { formatTime } from "@/lib/date-utils";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
+import { useRef } from "react";
+import { formatTime } from "@/lib/date-utils";
 import { createConfetti } from "@/lib/confetti";
 
 interface MatchCardProps {
@@ -37,7 +40,7 @@ export default function MatchCard({ match, currentUser, onMatchUpdate }: MatchCa
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const joinButtonRef = useRef<HTMLButtonElement>(null);
-  
+
   const rsvps = match.rsvps || [];
   const currentPlayerRsvp = rsvps.find(rsvp => rsvp.userId === currentUser.id);
   const isUserJoined = !!currentPlayerRsvp;
@@ -62,7 +65,7 @@ export default function MatchCard({ match, currentUser, onMatchUpdate }: MatchCa
       if (joinButtonRef.current) {
         createConfetti(joinButtonRef.current);
       }
-      
+
       toast({
         title: "Match joined!",
         description: "You've successfully joined the match.",
@@ -128,18 +131,27 @@ export default function MatchCard({ match, currentUser, onMatchUpdate }: MatchCa
   const renderPlayerAvatars = () => {
     const confirmedRsvps = rsvps.filter(rsvp => rsvp.status === "confirmed");
     const waitlistedRsvps = rsvps.filter(rsvp => rsvp.status === "waitlisted");
-    
+
     const avatars = [];
-    
+
     // Add confirmed players
     confirmedRsvps.forEach((rsvp) => {
       avatars.push(
-        <div key={rsvp.userId} className="player-avatar">
-          {rsvp.user.avatar}
-        </div>
+        <TooltipProvider key={rsvp.userId}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="player-avatar">
+                {rsvp.user.avatar}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent className="bg-white text-gray-800 border rounded shadow-md p-2">
+              {rsvp.user.name}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       );
     });
-    
+
     // Add empty slots for confirmed players
     const emptySlots = match.maxPlayers - confirmedRsvps.length;
     for (let i = 0; i < emptySlots; i++) {
@@ -152,16 +164,25 @@ export default function MatchCard({ match, currentUser, onMatchUpdate }: MatchCa
         </div>
       );
     }
-    
+
     // Add waitlisted players
     waitlistedRsvps.forEach((rsvp) => {
       avatars.push(
-        <div key={`waitlist-${rsvp.userId}`} className="waitlist-avatar">
-          {rsvp.user.avatar}
-        </div>
+        <TooltipProvider key={`waitlist-${rsvp.userId}`}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="waitlist-avatar">
+                {rsvp.user.avatar}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent className="bg-white text-gray-800 border rounded shadow-md p-2">
+              {rsvp.user.name}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       );
     });
-    
+
     return avatars;
   };
 
@@ -175,7 +196,7 @@ export default function MatchCard({ match, currentUser, onMatchUpdate }: MatchCa
           {formatTime(match.time)}
         </span>
       </div>
-      
+
       <div className="flex items-center justify-between mb-3">
         <div className="flex -space-x-2">
           {renderPlayerAvatars()}
@@ -193,7 +214,7 @@ export default function MatchCard({ match, currentUser, onMatchUpdate }: MatchCa
           )}
         </div>
       </div>
-      
+
       {isUserJoined ? (
         <Button
           variant="outline"

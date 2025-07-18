@@ -1,6 +1,10 @@
+Analysis: The code needs to be updated to include tooltips for user avatars in the TimeSlotCard component. This involves adding the necessary imports for the tooltip components and wrapping the avatar elements with the TooltipProvider, TooltipTrigger, and TooltipContent components to display the user's full name on hover.
+```
+```replit_final_file
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Plus, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -130,7 +134,7 @@ export default function TimeSlotCard({
       if (joinButtonRef.current) {
         createConfetti(joinButtonRef.current);
       }
-      
+
       toast({
         title: "Joined match!",
         description: `You've joined the ${label.toLowerCase()} volleyball session.`,
@@ -189,114 +193,130 @@ export default function TimeSlotCard({
   };
 
   return (
-    <div className={`p-3 rounded-lg border-2 transition-all duration-200 hover:shadow-md ${color} ${getBorderColor()}`}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center space-x-2">
-          <Icon className="h-4 w-4" />
-          <span className="text-sm font-medium">{label}</span>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center space-x-1">
-          <Users className="h-3 w-3 text-gray-500" />
-          <span className="text-xs text-gray-600">{playerCount}/{maxPlayers}</span>
-        </div>
-        {playerCount > 0 && (
-          <Badge className={`text-xs px-2 py-1 ${getStatusColor()}`}>
-            {isFull ? "Full" : playerCount === maxPlayers - 1 ? "Almost Full" : "Open"}
-          </Badge>
-        )}
-      </div>
-
-      {playerCount > 0 && (
-        <div className="mb-3 space-y-2">
-          {/* Confirmed players */}
-          <div className="flex -space-x-1">
-            {confirmedRsvps.slice(0, 3).map((rsvp) => (
-              rsvp.user && rsvp.user.avatar ? (
-                <div key={rsvp.userId} className="player-avatar w-6 h-6 text-xs">
-                  {rsvp.user.avatar}
-                </div>
-              ) : null
-            ))}
-            {playerCount > 3 && (
-              <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-medium">
-                +{playerCount - 3}
-              </div>
-            )}
+    <TooltipProvider>
+      <div className={`p-3 rounded-lg border-2 transition-all duration-200 hover:shadow-md ${color} ${getBorderColor()}`}>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center space-x-2">
+            <Icon className="h-4 w-4" />
+            <span className="text-sm font-medium">{label}</span>
           </div>
+        </div>
 
-          {/* Waitlisted players */}
-          {waitlistedRsvps.length > 0 && (
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center space-x-1">
+            <Users className="h-3 w-3 text-gray-500" />
+            <span className="text-xs text-gray-600">{playerCount}/{maxPlayers}</span>
+          </div>
+          {playerCount > 0 && (
+            <Badge className={`text-xs px-2 py-1 ${getStatusColor()}`}>
+              {isFull ? "Full" : playerCount === maxPlayers - 1 ? "Almost Full" : "Open"}
+            </Badge>
+          )}
+        </div>
+
+        {playerCount > 0 && (
+          <div className="mb-3 space-y-2">
+            {/* Confirmed players */}
             <div className="flex -space-x-1">
-              {waitlistedRsvps.slice(0, 3).map((rsvp) => (
+              {confirmedRsvps.slice(0, 3).map((rsvp) => (
                 rsvp.user && rsvp.user.avatar ? (
-                  <div key={rsvp.userId} className="waitlist-avatar w-6 h-6 text-xs">
-                    {rsvp.user.avatar}
-                  </div>
+                  <TooltipProvider key={rsvp.userId}>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <div className="player-avatar w-6 h-6 text-xs">
+                          {rsvp.user.avatar}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>{rsvp.user.name}</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 ) : null
               ))}
-              {waitlistedRsvps.length > 3 && (
-                <div className="w-6 h-6 bg-gray-100 border-2 border-dashed border-gray-300 rounded-full flex items-center justify-center text-xs font-medium text-gray-500">
-                  +{waitlistedRsvps.length - 3}
+              {playerCount > 3 && (
+                <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-medium">
+                  +{playerCount - 3}
                 </div>
               )}
             </div>
-          )}
-        </div>
-      )}
 
-      {!currentUser ? (
-        showNameInput ? (
-          <div className="flex space-x-2">
-            <Input
-              placeholder="Enter your name"
-              value={nameInput}
-              onChange={(e) => setNameInput(e.target.value)}
-              className="text-xs h-8"
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  handleNameSubmit(nameInput);
-                }
-              }}
-              autoFocus
-            />
-            <Button
-              className="bg-court-blue hover:bg-blue-700 text-white text-xs h-8 px-3"
-              onClick={() => handleNameSubmit(nameInput)}
-              disabled={nameInput.trim().length < 2}
-            >
-              Join
-            </Button>
+            {/* Waitlisted players */}
+            {waitlistedRsvps.length > 0 && (
+              <div className="flex -space-x-1">
+                {waitlistedRsvps.slice(0, 3).map((rsvp) => (
+                  rsvp.user && rsvp.user.avatar ? (
+                    <TooltipProvider key={rsvp.userId}>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <div className="waitlist-avatar w-6 h-6 text-xs">
+                            {rsvp.user.avatar}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>{rsvp.user.name}</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : null
+                ))}
+                {waitlistedRsvps.length > 3 && (
+                  <div className="w-6 h-6 bg-gray-100 border-2 border-dashed border-gray-300 rounded-full flex items-center justify-center text-xs font-medium text-gray-500">
+                    +{waitlistedRsvps.length - 3}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
+        )}
+
+        {!currentUser ? (
+          showNameInput ? (
+            <div className="flex space-x-2">
+              <Input
+                placeholder="Enter your name"
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                className="text-xs h-8"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleNameSubmit(nameInput);
+                  }
+                }}
+                autoFocus
+              />
+              <Button
+                className="bg-court-blue hover:bg-blue-700 text-white text-xs h-8 px-3"
+                onClick={() => handleNameSubmit(nameInput)}
+                disabled={nameInput.trim().length < 2}
+              >
+                Join
+              </Button>
+            </div>
+          ) : (
+            <Button
+              className="w-full bg-court-blue hover:bg-blue-700 text-white text-xs h-8"
+              onClick={() => setShowNameInput(true)}
+            >
+              {playerCount === 0 ? "Start Match" : isFull ? "Join Waitlist" : "Join"}
+            </Button>
+          )
+        ) : isUserJoined ? (
+          <Button
+            variant="outline"
+            className="w-full text-xs h-8"
+            onClick={() => leaveMutation.mutate()}
+            disabled={leaveMutation.isPending}
+          >
+            {leaveMutation.isPending ? "Leaving..." : "Leave"}
+          </Button>
         ) : (
           <Button
+            ref={joinButtonRef}
             className="w-full bg-court-blue hover:bg-blue-700 text-white text-xs h-8"
-            onClick={() => setShowNameInput(true)}
+            onClick={() => createAndJoinMutation.mutate()}
+            disabled={createAndJoinMutation.isPending}
           >
-            {playerCount === 0 ? "Start Match" : isFull ? "Join Waitlist" : "Join"}
+            {createAndJoinMutation.isPending ? "Joining..." : playerCount === 0 ? "Start Match" : isFull ? "Join Waitlist" : "Join"}
           </Button>
-        )
-      ) : isUserJoined ? (
-        <Button
-          variant="outline"
-          className="w-full text-xs h-8"
-          onClick={() => leaveMutation.mutate()}
-          disabled={leaveMutation.isPending}
-        >
-          {leaveMutation.isPending ? "Leaving..." : "Leave"}
-        </Button>
-      ) : (
-        <Button
-          ref={joinButtonRef}
-          className="w-full bg-court-blue hover:bg-blue-700 text-white text-xs h-8"
-          onClick={() => createAndJoinMutation.mutate()}
-          disabled={createAndJoinMutation.isPending}
-        >
-          {createAndJoinMutation.isPending ? "Joining..." : playerCount === 0 ? "Start Match" : isFull ? "Join Waitlist" : "Join"}
-        </Button>
-      )}
-    </div>
+        )}
+      </div>
+    </TooltipProvider>
   );
 }
