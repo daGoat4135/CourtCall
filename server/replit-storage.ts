@@ -181,10 +181,14 @@ export class ReplitStorage implements IStorage {
 
   async getMatchesByDateRange(startDate: Date, endDate: Date): Promise<Match[]> {
     const matches = this.db.matches || {};
-    return Object.values(matches).filter((match: any) => {
+    const allMatches = Object.values(matches) as Match[];
+    
+    const result = allMatches.filter((match: any) => {
       const matchDate = new Date(match.date);
       return matchDate >= startDate && matchDate <= endDate;
     });
+    
+    return result;
   }
 
   async createMatch(insertMatch: InsertMatch): Promise<Match> {
@@ -350,25 +354,18 @@ export class ReplitStorage implements IStorage {
     user: User;
     gameCount: number;
   }>> {
-    console.log("getPlayerStats called with:", { startDate, endDate });
-    
     const matchesInRange = await this.getMatchesByDateRange(startDate, endDate);
-    console.log("Matches in range:", matchesInRange.length);
-    
     const userStats = new Map<number, number>();
 
     // Get all RSVPs for matches in range
     const rsvps = this.db.rsvps || {};
-    const allRsvps = Object.values(rsvps) as Rsvp[];
-    console.log("Total RSVPs in database:", allRsvps.length);
+    const allRsvpsArray = Object.values(rsvps) as Rsvp[];
     
     for (const match of matchesInRange) {
-      const matchRsvps = allRsvps.filter(rsvp => rsvp.matchId === match.id);
-      console.log(`Match ${match.id} has ${matchRsvps.length} RSVPs`);
+      const matchRsvps = allRsvpsArray.filter(rsvp => rsvp.matchId === match.id);
       for (const rsvp of matchRsvps) {
         if (rsvp.status === "confirmed") {
           userStats.set(rsvp.userId, (userStats.get(rsvp.userId) || 0) + 1);
-          console.log(`User ${rsvp.userId} now has ${userStats.get(rsvp.userId)} games`);
         }
       }
     }

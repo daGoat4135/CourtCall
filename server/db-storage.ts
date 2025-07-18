@@ -78,7 +78,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getMatchesByDateRange(startDate: Date, endDate: Date): Promise<Match[]> {
-    return await this.db
+    // Debug: get all matches first
+    const allMatches = await this.db.select().from(matches);
+    console.log("All matches:", allMatches.map(m => ({ id: m.id, date: m.date })));
+    
+    const result = await this.db
       .select()
       .from(matches)
       .where(
@@ -88,6 +92,11 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .orderBy(asc(matches.date));
+    
+    console.log("Date range query:", { startDate, endDate });
+    console.log("Matches in range:", result.map(m => ({ id: m.id, date: m.date })));
+    
+    return result;
   }
 
   async createMatch(insertMatch: InsertMatch): Promise<Match> {
@@ -224,26 +233,41 @@ export class DatabaseStorage implements IStorage {
     user: User;
     gameCount: number;
   }>> {
+    console.log("getPlayerStats called with:", { startDate, endDate });
     const matchesInRange = await this.getMatchesByDateRange(startDate, endDate);
+    console.log("Matches in range:", matchesInRange.length);
+    
+    // Get all RSVPs to debug
+    const allRsvps = await this.db.select().from(rsvps);
+    console.log("Total RSVPs in database:", allRsvps.length);
+    
     const userStats = new Map<number, number>();
 
     for (const match of matchesInRange) {
       const matchRsvps = await this.getRsvpsByMatch(match.id);
+      console.log(`Match ${match.id} has ${matchRsvps.length} RSVPs`);
       for (const rsvp of matchRsvps) {
         if (rsvp.status === "confirmed") {
-          userStats.set(rsvp.userId, (userStats.get(rsvp.userId) || 0) + 1);
+          const currentCount = userStats.get(rsvp.userId) || 0;
+          userStats.set(rsvp.userId, currentCount + 1);
+          console.log(`User ${rsvp.userId} now has ${currentCount + 1} games`);
         }
       }
     }
 
+    console.log("User stats map:", Array.from(userStats.entries()));
+    
     const result = [];
     for (const [userId, gameCount] of userStats) {
       const user = await this.getUser(userId);
       if (user) {
+        console.log(`Added user ${user.name} with ${gameCount} games`);
         result.push({ userId, user, gameCount });
       }
     }
 
-    return result.sort((a, b) => b.gameCount - a.gameCount);
+    const finalResult = result.sort((a, b) => b.gameCount - a.gameCount);
+    console.log("Final leaderboard result:", finalResult);
+    return finalResult;
   }
 }
