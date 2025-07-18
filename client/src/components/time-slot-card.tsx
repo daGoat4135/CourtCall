@@ -1,6 +1,3 @@
-Analysis: The code needs to be updated to include tooltips for user avatars in the TimeSlotCard component. This involves adding the necessary imports for the tooltip components and wrapping the avatar elements with the TooltipProvider, TooltipTrigger, and TooltipContent components to display the user's full name on hover.
-```
-```replit_final_file
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
