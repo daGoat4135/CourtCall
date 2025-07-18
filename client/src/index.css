@@ -104,4 +104,32 @@
   .leaderboard-rank {
     @apply w-6 h-6 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white rounded-full flex items-center justify-center text-xs font-bold;
   }
+
+  /* Mobile swipe carousel styles */
+  .embla__container {
+    @apply flex;
+  }
+
+  .embla__slide {
+    @apply flex-none w-full px-2;
+  }
+
+  .embla__slide:first-child {
+    @apply pl-4;
+  }
+
+  .embla__slide:last-child {
+    @apply pr-4;
+  }
+
+  .mobile-day-card {
+    @apply flex-none w-full max-w-xs mx-auto;
+  }
+
+  /* Smooth scrolling for mobile carousel */
+  @media (max-width: 768px) {
+    .embla__container {
+      scroll-behavior: smooth;
+    }
+  }
 }
