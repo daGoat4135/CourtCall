@@ -137,7 +137,7 @@ export default function MatchCard({ match, currentUser, onMatchUpdate }: MatchCa
     // Add confirmed players
     confirmedRsvps.forEach((rsvp) => {
       avatars.push(
-        <TooltipProvider key={rsvp.userId}>
+        <TooltipProvider key={rsvp.userId} delayDuration={200}>
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="player-avatar">
@@ -168,7 +168,7 @@ export default function MatchCard({ match, currentUser, onMatchUpdate }: MatchCa
     // Add waitlisted players
     waitlistedRsvps.forEach((rsvp) => {
       avatars.push(
-        <TooltipProvider key={`waitlist-${rsvp.userId}`}>
+        <TooltipProvider key={`waitlist-${rsvp.userId}`} delayDuration={200}>
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="waitlist-avatar">
