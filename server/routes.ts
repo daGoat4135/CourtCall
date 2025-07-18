@@ -70,6 +70,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (userName && !userId) {
         const user = await storage.getOrCreateUserByName(userName);
         actualUserId = user.id;
+      } else if (userId) {
+        // Check if user exists in backend, if not this is a frontend-only user
+        const existingUser = await storage.getUser(userId);
+        if (!existingUser) {
+          // This is a frontend-only user (with timestamp ID), we need userName to create them
+          if (!userName) {
+            return res.status(400).json({ error: "User not found in database. Please provide userName." });
+          }
+          const user = await storage.getOrCreateUserByName(userName);
+          actualUserId = user.id;
+        }
       }
       
       // Check if user is already in the match
@@ -114,6 +125,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (userName && !userId) {
         const user = await storage.getOrCreateUserByName(userName);
         actualUserId = user.id;
+      } else if (userId) {
+        // Check if user exists in backend, if not find by name
+        const existingUser = await storage.getUser(userId);
+        if (!existingUser && userName) {
+          const user = await storage.getOrCreateUserByName(userName);
+          actualUserId = user.id;
+        }
       }
       
       // Check if the leaving user was confirmed before deleting
