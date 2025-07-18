@@ -27,9 +27,9 @@ export function createConfetti(element: HTMLElement) {
     
     // Calculate explosion trajectory
     const angle = (Math.PI * 2 * i) / particleCount + (Math.random() - 0.5) * 0.5;
-    const velocity = 80 + Math.random() * 120;
+    const velocity = 120 + Math.random() * 160;
     const initialVelocityX = Math.cos(angle) * velocity;
-    const initialVelocityY = Math.sin(angle) * velocity - 80 - Math.random() * 40; // Strong upward bias
+    const initialVelocityY = Math.sin(angle) * velocity - 180 - Math.random() * 80; // Much stronger upward bias
     
     // Physics-based animation
     let currentX = 0;
