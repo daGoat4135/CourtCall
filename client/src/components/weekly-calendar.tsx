@@ -12,7 +12,7 @@ interface WeeklyCalendarProps {
   currentUser: { id: number; name: string; avatar: string; department?: string } | null;
   isLoading: boolean;
   onNavigateWeek: (direction: "prev" | "next") => void;
-  onMatchUpdate: () => void;
+  onMatchUpdate: (celebrationType?: "join" | "create", playerName?: string) => void;
   onNameSubmit?: (name: string, department: string) => void;
 }
 

@@ -6,6 +6,9 @@ import WeeklyCalendar from "@/components/weekly-calendar";
 import Leaderboard from "@/components/leaderboard";
 import StatsCards from "@/components/stats-cards";
 import UpcomingReminders from "@/components/upcoming-reminders";
+import CelebrationAnimation from "@/components/celebration-animation";
+import NameInputDialog from "@/components/name-input-dialog";
+import { useCelebration } from "@/hooks/use-celebration";
 
 import { formatWeekRange } from "@/lib/date-utils";
 
@@ -13,6 +16,7 @@ export default function Dashboard() {
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [currentUser, setCurrentUser] = useState<{ id: number; name: string; avatar: string; department?: string } | null>(null);
   const queryClient = useQueryClient();
+  const { celebration, celebrateMatchJoin, celebrateMatchCreate, celebrateFirstMatch, celebrateMilestone, hideCelebration } = useCelebration();
 
 
   // Check for stored user on mount
@@ -90,10 +94,28 @@ export default function Dashboard() {
     );
   };
 
-  const handleMatchUpdate = () => {
+  const handleMatchUpdate = (celebrationType?: "join" | "create", playerName?: string) => {
     refetchMatches();
     // Also invalidate leaderboard cache so it refreshes when someone joins/leaves
     queryClient.invalidateQueries({ queryKey: ["/api/leaderboard"] });
+    
+    // Trigger celebration animations
+    if (celebrationType && playerName) {
+      if (celebrationType === "join") {
+        // Check if this is the user's first match
+        const userMatches = matches.filter(match => 
+          match.rsvps?.some(rsvp => rsvp.user?.name === playerName)
+        );
+        
+        if (userMatches.length === 0) {
+          celebrateFirstMatch(playerName);
+        } else {
+          celebrateMatchJoin(playerName);
+        }
+      } else if (celebrationType === "create") {
+        celebrateMatchCreate(playerName);
+      }
+    }
   };
 
   const weeklyStats = {
@@ -153,7 +175,18 @@ export default function Dashboard() {
         </div>
       </main>
       
-
+      <NameInputDialog 
+        open={!currentUser} 
+        onNameSubmit={handleNameSubmit}
+      />
+      
+      <CelebrationAnimation
+        show={celebration.show}
+        type={celebration.type}
+        playerName={celebration.playerName}
+        matchCount={celebration.matchCount}
+        onComplete={hideCelebration}
+      />
     </div>
   );
 }

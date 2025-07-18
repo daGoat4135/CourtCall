@@ -32,7 +32,7 @@ interface TimeSlotCardProps {
     department?: string;
   } | null;
   onNameSubmit?: (name: string) => void;
-  onMatchUpdate: () => void;
+  onMatchUpdate: (celebrationType?: "join" | "create", playerName?: string) => void;
   slotInfo: {
     icon: any;
     label: string;
@@ -128,7 +128,7 @@ export default function TimeSlotCard({
         title: "Joined match!",
         description: `You've joined the ${label.toLowerCase()} volleyball session.`,
       });
-      onMatchUpdate();
+      onMatchUpdate("create", currentUser.name);
     },
     onError: (error) => {
       toast({
