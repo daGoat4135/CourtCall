@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Plus, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { createConfetti } from "@/lib/confetti";
 
 interface TimeSlotCardProps {
   match?: {
@@ -53,6 +54,7 @@ export default function TimeSlotCard({
   const { icon: Icon, label, color } = slotInfo;
   const [nameInput, setNameInput] = useState("");
   const [showNameInput, setShowNameInput] = useState(false);
+  const joinButtonRef = useRef<HTMLButtonElement>(null);
 
   const rsvps = match?.rsvps || [];
   const confirmedRsvps = rsvps.filter(rsvp => rsvp.status === "confirmed");
@@ -124,6 +126,11 @@ export default function TimeSlotCard({
       return await joinResponse.json();
     },
     onSuccess: () => {
+      // Trigger confetti effect
+      if (joinButtonRef.current) {
+        createConfetti(joinButtonRef.current);
+      }
+      
       toast({
         title: "Joined match!",
         description: `You've joined the ${label.toLowerCase()} volleyball session.`,
@@ -282,6 +289,7 @@ export default function TimeSlotCard({
         </Button>
       ) : (
         <Button
+          ref={joinButtonRef}
           className="w-full bg-court-blue hover:bg-blue-700 text-white text-xs h-8"
           onClick={() => createAndJoinMutation.mutate()}
           disabled={createAndJoinMutation.isPending}

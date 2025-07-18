@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus } from "lucide-react";
 import { formatTime } from "@/lib/date-utils";
 import { useToast } from "@/hooks/use-toast";
+import { createConfetti } from "@/lib/confetti";
 
 interface MatchCardProps {
   match: {
@@ -35,6 +36,7 @@ interface MatchCardProps {
 export default function MatchCard({ match, currentUser, onMatchUpdate }: MatchCardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const joinButtonRef = useRef<HTMLButtonElement>(null);
   
   const rsvps = match.rsvps || [];
   const currentPlayerRsvp = rsvps.find(rsvp => rsvp.userId === currentUser.id);
@@ -56,6 +58,11 @@ export default function MatchCard({ match, currentUser, onMatchUpdate }: MatchCa
       return response.json();
     },
     onSuccess: () => {
+      // Trigger confetti effect
+      if (joinButtonRef.current) {
+        createConfetti(joinButtonRef.current);
+      }
+      
       toast({
         title: "Match joined!",
         description: "You've successfully joined the match.",
@@ -198,6 +205,7 @@ export default function MatchCard({ match, currentUser, onMatchUpdate }: MatchCa
         </Button>
       ) : (
         <Button
+          ref={joinButtonRef}
           className="w-full bg-court-blue hover:bg-blue-700 text-white text-sm"
           onClick={() => joinMutation.mutate()}
           disabled={joinMutation.isPending}
