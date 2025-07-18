@@ -102,6 +102,6 @@
   }
   
   .leaderboard-rank {
-    @apply bg-gradient-to-r from-yellow-400 to-yellow-600 text-white;
+    @apply w-6 h-6 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white rounded-full flex items-center justify-center text-xs font-bold;
   }
 }
