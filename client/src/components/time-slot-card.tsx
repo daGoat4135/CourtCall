@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { useState, useRef } from "react";
 import { createConfetti } from "@/lib/confetti";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface TimeSlotCardProps {
   match?: {
@@ -55,6 +56,7 @@ export default function TimeSlotCard({
   const [nameInput, setNameInput] = useState("");
   const [showNameInput, setShowNameInput] = useState(false);
   const joinButtonRef = useRef<HTMLButtonElement>(null);
+  const isMobile = useIsMobile();
 
   const rsvps = match?.rsvps || [];
   const confirmedRsvps = rsvps.filter(rsvp => rsvp.status === "confirmed");
@@ -189,11 +191,11 @@ export default function TimeSlotCard({
   };
 
   return (
-    <div className={`p-3 rounded-lg border-2 transition-all duration-200 hover:shadow-md ${color} ${getBorderColor()}`}>
+    <div className={`${isMobile ? 'p-2' : 'p-3'} rounded-lg border-2 transition-all duration-200 hover:shadow-md ${color} ${getBorderColor()}`}>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-2">
-          <Icon className="h-4 w-4" />
-          <span className="text-sm font-medium">{label}</span>
+          <Icon className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
+          <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium`}>{isMobile ? label.slice(0, 4) : label}</span>
         </div>
       </div>
 
@@ -263,7 +265,7 @@ export default function TimeSlotCard({
               autoFocus
             />
             <Button
-              className="bg-court-blue hover:bg-blue-700 text-white text-xs h-8 px-3"
+              className={`bg-court-blue hover:bg-blue-700 text-white ${isMobile ? 'text-xs h-9 px-3' : 'text-xs h-8 px-3'}`}
               onClick={() => handleNameSubmit(nameInput)}
               disabled={nameInput.trim().length < 2}
             >
@@ -272,7 +274,7 @@ export default function TimeSlotCard({
           </div>
         ) : (
           <Button
-            className="w-full bg-court-blue hover:bg-blue-700 text-white text-xs h-8"
+            className={`w-full bg-court-blue hover:bg-blue-700 text-white ${isMobile ? 'text-xs h-9' : 'text-xs h-8'}`}
             onClick={() => setShowNameInput(true)}
           >
             {playerCount === 0 ? "Start Match" : isFull ? "Join Waitlist" : "Join"}
@@ -281,7 +283,7 @@ export default function TimeSlotCard({
       ) : isUserJoined ? (
         <Button
           variant="outline"
-          className="w-full text-xs h-8"
+          className={`w-full ${isMobile ? 'text-xs h-9' : 'text-xs h-8'}`}
           onClick={() => leaveMutation.mutate()}
           disabled={leaveMutation.isPending}
         >
@@ -290,7 +292,7 @@ export default function TimeSlotCard({
       ) : (
         <Button
           ref={joinButtonRef}
-          className="w-full bg-court-blue hover:bg-blue-700 text-white text-xs h-8"
+          className={`w-full bg-court-blue hover:bg-blue-700 text-white ${isMobile ? 'text-xs h-9' : 'text-xs h-8'}`}
           onClick={() => createAndJoinMutation.mutate()}
           disabled={createAndJoinMutation.isPending}
         >

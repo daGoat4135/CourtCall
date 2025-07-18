@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import TimeSlotCard from "./time-slot-card";
 import { getWeekDates, formatWeekRange, getDayName, getDayNumber } from "@/lib/date-utils";
 import { isSameDay } from "date-fns";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface WeeklyCalendarProps {
   matches: any[];
@@ -25,6 +26,7 @@ export default function WeeklyCalendar({
   onMatchUpdate,
   onNameSubmit
 }: WeeklyCalendarProps) {
+  const isMobile = useIsMobile();
   const weekDates = getWeekDates(currentWeek);
 
   const getMatchesForDate = (date: Date) => {
@@ -51,11 +53,11 @@ export default function WeeklyCalendar({
 
   if (isLoading) {
     return (
-      <Card className="p-6">
+      <Card className={`${isMobile ? 'p-4' : 'p-6'}`}>
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
-          <div className="grid grid-cols-5 gap-4">
-            {[...Array(5)].map((_, i) => (
+          <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-5'}`}>
+            {[...Array(isMobile ? 1 : 5)].map((_, i) => (
               <div key={i} className="space-y-3">
                 <div className="h-4 bg-gray-200 rounded"></div>
                 <div className="h-6 bg-gray-200 rounded w-8"></div>
@@ -70,65 +72,105 @@ export default function WeeklyCalendar({
 
   return (
     <>
-      <Card className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">This Week's Matches</h2>
+      <Card className={`${isMobile ? 'p-4' : 'p-6'}`}>
+        <div className={`flex items-center justify-between mb-6 ${isMobile ? 'flex-col space-y-4' : ''}`}>
+          <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold text-gray-900`}>This Week's Matches</h2>
           <div className="flex items-center space-x-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onNavigateWeek("prev")}
-              className="p-2 hover:bg-gray-100"
+              className={`${isMobile ? 'p-3' : 'p-2'} hover:bg-gray-100`}
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className={`${isMobile ? 'h-5 w-5' : 'h-4 w-4'}`} />
             </Button>
-            <span className="text-sm font-medium text-gray-700">
+            <span className={`${isMobile ? 'text-sm min-w-32 text-center' : 'text-sm'} font-medium text-gray-700`}>
               {formatWeekRange(currentWeek)}
             </span>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onNavigateWeek("next")}
-              className="p-2 hover:bg-gray-100"
+              className={`${isMobile ? 'p-3' : 'p-2'} hover:bg-gray-100`}
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className={`${isMobile ? 'h-5 w-5' : 'h-4 w-4'}`} />
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-5 gap-4 mb-6">
-          {weekDates.map((date) => (
-            <div key={date.toISOString()} className="text-center">
-              <div className="text-sm font-medium text-gray-500 mb-2">
-                {getDayName(date)}
+        {isMobile ? (
+          <div className="space-y-6 mb-6">
+            {weekDates.map((date) => (
+              <div key={date.toISOString()} className="border-b border-gray-200 pb-6 last:border-b-0">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="text-left">
+                    <div className="text-lg font-semibold text-gray-900">
+                      {getDayName(date)}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {getDayNumber(date)}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-3">
+                  {["morning", "lunch", "afterwork"].map((timeSlot) => {
+                    const match = findMatchForSlot(date, timeSlot);
+                    const slotInfo = getTimeSlotInfo(timeSlot);
+                    const Icon = slotInfo.icon;
+                    
+                    return (
+                      <TimeSlotCard
+                        key={`${date.toISOString()}-${timeSlot}`}
+                        match={match}
+                        timeSlot={timeSlot}
+                        date={date}
+                        currentUser={currentUser}
+                        onMatchUpdate={onMatchUpdate}
+                        slotInfo={slotInfo}
+                        onNameSubmit={onNameSubmit}
+                      />
+                    );
+                  })}
+                </div>
               </div>
-              <div className="text-lg font-semibold text-gray-900 mb-3">
-                {getDayNumber(date)}
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-5 gap-4 mb-6">
+            {weekDates.map((date) => (
+              <div key={date.toISOString()} className="text-center">
+                <div className="text-sm font-medium text-gray-500 mb-2">
+                  {getDayName(date)}
+                </div>
+                <div className="text-lg font-semibold text-gray-900 mb-3">
+                  {getDayNumber(date)}
+                </div>
+                
+                <div className="space-y-2">
+                  {["morning", "lunch", "afterwork"].map((timeSlot) => {
+                    const match = findMatchForSlot(date, timeSlot);
+                    const slotInfo = getTimeSlotInfo(timeSlot);
+                    const Icon = slotInfo.icon;
+                    
+                    return (
+                      <TimeSlotCard
+                        key={`${date.toISOString()}-${timeSlot}`}
+                        match={match}
+                        timeSlot={timeSlot}
+                        date={date}
+                        currentUser={currentUser}
+                        onMatchUpdate={onMatchUpdate}
+                        slotInfo={slotInfo}
+                        onNameSubmit={onNameSubmit}
+                      />
+                    );
+                  })}
+                </div>
               </div>
-              
-              <div className="space-y-2">
-                {["morning", "lunch", "afterwork"].map((timeSlot) => {
-                  const match = findMatchForSlot(date, timeSlot);
-                  const slotInfo = getTimeSlotInfo(timeSlot);
-                  const Icon = slotInfo.icon;
-                  
-                  return (
-                    <TimeSlotCard
-                      key={`${date.toISOString()}-${timeSlot}`}
-                      match={match}
-                      timeSlot={timeSlot}
-                      date={date}
-                      currentUser={currentUser}
-                      onMatchUpdate={onMatchUpdate}
-                      slotInfo={slotInfo}
-                      onNameSubmit={onNameSubmit}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         <div className="text-center text-sm text-gray-500 mt-4">
           <p>Click any time slot to join a match. Fixed slots make it simple!</p>
