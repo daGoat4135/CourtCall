@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { addWeeks, subWeeks } from "date-fns";
 import Header from "@/components/header";
 import WeeklyCalendar from "@/components/weekly-calendar";
@@ -12,6 +12,7 @@ import { formatWeekRange } from "@/lib/date-utils";
 export default function Dashboard() {
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [currentUser, setCurrentUser] = useState<{ id: number; name: string; avatar: string } | null>(null);
+  const queryClient = useQueryClient();
 
 
   // Check for stored user on mount
@@ -90,6 +91,8 @@ export default function Dashboard() {
 
   const handleMatchUpdate = () => {
     refetchMatches();
+    // Also invalidate leaderboard cache so it refreshes when someone joins/leaves
+    queryClient.invalidateQueries({ queryKey: ["/api/leaderboard"] });
   };
 
   const weeklyStats = {
